@@ -1,0 +1,103 @@
+{
+  "Contra Pessoa": {
+
+    "campos": [
+
+      {
+        "nome": "Tipo",
+
+        "tipo": "dropdown",
+
+        "opcoes": [
+          "Lesão Corporal",
+          "Violência Doméstica",
+          "Ameaça"
+        ]
+      },
+
+      {
+        "nome": "Autor no Local",
+
+        "tipo": "bool"
+      },
+
+      {
+        "nome": "Feridos",
+
+        "tipo": "bool"
+      }
+    ]
+  },
+
+  "Contra Patrimônio": {
+
+    "campos": [
+
+      {
+        "nome": "Tipo",
+
+        "tipo": "dropdown",
+
+        "opcoes": [
+          "Roubo",
+          "Furto",
+          "Dano"
+        ]
+      },
+
+      {
+        "nome": "Quantidade de Autores",
+
+        "tipo": "numero"
+      }
+    ]
+  },
+
+  "Perturbação": {
+
+    "campos": [
+
+      {
+        "nome": "Tipo",
+
+        "tipo": "dropdown",
+
+        "opcoes": [
+          "Som",
+          "Gritaria",
+          "Fogos"
+        ]
+      },
+
+      {
+        "nome": "Denúncia Anônima",
+
+        "tipo": "bool"
+      }
+    ]
+  },
+
+  "Trânsito": {
+
+    "campos": [
+
+      {
+        "nome": "Rodovia",
+
+        "tipo": "dropdown",
+
+        "opcoes": [
+          "PR",
+          "BR",
+          "OUTRO"
+        ]
+      },
+
+      {
+        "nome": "Atendimento Médico",
+
+        "tipo": "bool"
+      }
+    ]
+  }
+}

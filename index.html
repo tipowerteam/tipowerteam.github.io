@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Sistema de Assistência para Atendentes INDRA
+    </title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <h1>
+        SISTEMA DE ASSISTÊNCIA PARA ATENDENTES INDRA
+    </h1>
+
+    <hr>
+
+    <label for="nome">
+        Nome do Atendente
+    </label>
+
+    <input id="nome"
+           type="text"
+           placeholder="Digite seu nome">
+
+    <label for="natureza">
+        Natureza da Ocorrência
+    </label>
+
+    <select id="natureza">
+
+        <option value="">
+            Carregando...
+        </option>
+
+    </select>
+
+    <div id="camposDinamicos"></div>
+
+    <label for="descricao">
+        Informações Complementares
+    </label>
+
+    <textarea id="descricao"
+              placeholder="Digite informações adicionais">
+    </textarea>
+
+    <button onclick="gerarTexto()">
+
+        Gerar Ocorrência
+
+    </button>
+
+    <h2>
+        Resultado
+    </h2>
+
+    <textarea id="resultado"
+              readonly>
+    </textarea>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

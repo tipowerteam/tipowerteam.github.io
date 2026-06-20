@@ -1,0 +1,41 @@
+:root {
+    --fonte-padrao: Arial;
+    --cor-fundo: #f5f5f5;
+    --cor-borda: #cccccc;
+    --cor-botao: #2f6fed;
+    --cor-botao-hover: #2457ba;
+}
+
+body {
+    font-family: var(--fonte-padrao);
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+    background: var(--cor-fundo);
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+textarea {
+    min-height: 120px;
+}
+
+button {
+    background: var(--cor-botao);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+    button:hover {
+        background: var(--cor-botao-hover);
+    }
