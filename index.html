@@ -24,13 +24,12 @@
     <div id="camposDinamicos"></div>
 
     <label for="descricao">Informações Complementares (Manual)</label>
-    <textarea id="descricao" placeholder="Digite informações adicionais"></textarea>
+    <textarea id="descricao" placeholder="Digite informações adicionais como características, rumo de fuga, roupas..."></textarea>
 
     <h2>Resultado do Despacho</h2>
     <textarea id="resultado" readonly></textarea>
 
     <div class="botoes-acoes">
-        <!--<button onclick="gerarTexto()" class="btn-principal">Gerar Ocorrência</button>-->
         <button onclick="copiarTexto()" class="btn-secundario">Copiar Output</button>
         <button onclick="limparPagina()" class="btn-perigo">Limpar Tudo</button>
     </div>
@@ -40,6 +39,7 @@
         <ul id="listaSugestoes"></ul>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 </body>
 </html>
