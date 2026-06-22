@@ -1,12 +1,16 @@
-let dadosNaturezas;
-let dadosOcorrencias;
+// CONFIGURAÇÃO DO SUPABASE
+const SUPABASE_URL = "https://pzovfmlsmcyiupdxbwai.supabase.co";
+const SUPABASE_KEY = "sb_publishable_bisQorN4Yz-WC3YAZTBsjA_HlPeI4h5";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let dadosNaturezas = [];
+let perguntasDaCategoriaAtual = [];
 
 window.onload = async () => {
-    await carregarDados();
-    preencherNaturezas();
-
+    await carregarCategoriasDoBanco();
+    
     document.getElementById("natureza")
-        .addEventListener("change", atualizarCampos);
+        .addEventListener("change", atualizarCamposDoBanco);
 
     document.getElementById("descricao")
         .addEventListener("input", atualizarTudo);
@@ -18,19 +22,18 @@ window.onload = async () => {
 };
 
 let timeout;
-
 function atualizarTudo() {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
-        calcularProbabilidades();
-        gerarTexto();
+        calcularProbabilidadesDoBanco();
+        gerarTextoDoBanco();
     }, 200);
 }
 
 function alternarTema() {
-    const atual = document.body.getAttribute("data-theme");
+    const typeofTheme = document.body.getAttribute("data-theme");
     const botao = document.getElementById("btnTema");
-    if (atual === "dark") {
+    if (typeofTheme === "dark") {
         document.body.removeAttribute("data-theme");
         localStorage.setItem("theme", "light");
         botao.textContent = "Modo Noturno";
@@ -41,111 +44,127 @@ function alternarTema() {
     }
 }
 
-async function carregarDados() {
+async function carregarCategoriasDoBanco() {
     try {
-        const respostaNaturezas = await fetch("dados/naturezas.json");
-        dadosNaturezas = await respostaNaturezas.json();
+        let { data, error } = await supabase
+            .from('categorias')
+            .select('*')
+            .order('nome', { ascending: true });
 
-        const respostaOcorrencias = await fetch("dados/ocorrencias.json");
-        dadosOcorrencias = await respostaOcorrencias.json();
+        if (error) throw error;
+        dadosNaturezas = data;
+
+        const select = document.getElementById("natureza");
+        select.innerHTML = '<option value="">Selecione a Categoria...</option>';
+        dadosNaturezas.forEach(cat => {
+            const option = document.createElement("option");
+            option.value = cat.id;
+            option.textContent = cat.nome;
+            select.appendChild(option);
+        });
     } catch (erro) {
-        console.error(erro);
-        alert("Erro ao carregar arquivos de configuração.");
+        console.error("Erro ao conectar com o Supabase:", erro);
+        alert("Erro ao carregar as categorias.");
     }
 }
 
-function preencherNaturezas() {
-    const select = document.getElementById("natureza");
-    select.innerHTML = '<option value="">Selecione a Categoria...</option>';
-    dadosNaturezas.naturezas.forEach(nat => {
-        const option = document.createElement("option");
-        option.value = nat;
-        option.textContent = nat;
-        select.appendChild(option);
-    });
-}
-
-function atualizarCampos() {
-    const natureza = document.getElementById("natureza").value;
+async function atualizarCamposDoBanco() {
+    const categoriaId = document.getElementById("natureza").value;
     const container = document.getElementById("camposDinamicos");
     container.innerHTML = "";
     document.getElementById("painelSugestoes").style.display = "none";
-    document.getElementById("resultado").value = ""; // Limpa output anterior ao trocar
+    document.getElementById("resultado").value = "";
 
-    if (!natureza || !dadosOcorrencias[natureza]) return;
+    if (!categoriaId) {
+        perguntasDaCategoriaAtual = [];
+        return;
+    }
 
-    const dados = dadosOcorrencias[natureza];
+    try {
+        let { data: perguntas, error } = await supabase
+            .from('perguntas')
+            .select(`
+                id, nome_campo, tipo_campo, texto_output_true, ordem_contexto_true, pesos_true,
+                texto_output_numero, ordem_contexto_numero, ordem_exibicao,
+                opcoes_dropdown ( id, valor_opcao, texto_output, ordem_contexto, pesos )
+            `)
+            .eq('categoria_id', categoriaId)
+            .order('ordem_exibicao', { ascending: true });
 
-    dados.campos.forEach(campo => {
-        const divGroup = document.createElement("div");
-        const label = document.createElement("label");
-        label.textContent = campo.nome;
-        divGroup.appendChild(label);
+        if (error) throw error;
+        perguntasDaCategoriaAtual = perguntas;
 
-        const id = gerarId(campo.nome);
+        perguntas.forEach(campo => {
+            const divGroup = document.createElement("div");
+            const label = document.createElement("label");
+            label.textContent = campo.nome_campo;
+            divGroup.appendChild(label);
 
-        if (campo.tipo === "dropdown") {
-            const select = document.createElement("select");
-            select.id = id;
-            select.innerHTML = '<option value="">Selecione...</option>';
+            const id = gerarId(campo.nome_campo);
 
-            campo.opcoes.forEach(opcao => {
-                const option = document.createElement("option");
-                option.value = opcao.valor;
-                option.textContent = opcao.valor;
-                select.appendChild(option);
-            });
-            select.addEventListener("change", atualizarTudo);
-            divGroup.appendChild(select);
-        }
+            if (campo.tipo_campo === "dropdown") {
+                const select = document.createElement("select");
+                select.id = id;
+                select.innerHTML = '<option value="">Selecione...</option>';
+                campo.opcoes_dropdown.forEach(opcao => {
+                    const option = document.createElement("option");
+                    option.value = opcao.valor_opcao;
+                    option.textContent = opcao.valor_opcao;
+                    select.appendChild(option);
+                });
+                select.addEventListener("change", atualizarTudo);
+                divGroup.appendChild(select);
+            }
 
-        if (campo.tipo === "bool") {
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.id = id;
-            checkbox.style.width = "auto";
-            checkbox.style.marginLeft = "10px";
-            checkbox.addEventListener("change", atualizarTudo);
-            divGroup.appendChild(checkbox);
-        }
+            if (campo.tipo_campo === "bool") {
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.id = id;
+                checkbox.style.width = "auto";
+                checkbox.style.marginLeft = "10px";
+                checkbox.addEventListener("change", atualizarTudo);
+                divGroup.appendChild(checkbox);
+            }
 
-        if (campo.tipo === "numero") {
-            const numero = document.createElement("input");
-            numero.type = "number";
-            numero.id = id;
-            numero.addEventListener("input", atualizarTudo);
-            divGroup.appendChild(numero);
-        }
+            if (campo.tipo_campo === "numero") {
+                const numero = document.createElement("input");
+                numero.type = "number";
+                numero.id = id;
+                numero.min = "0";
+                numero.addEventListener("input", atualizarTudo);
+                divGroup.appendChild(numero);
+            }
 
-        container.appendChild(divGroup);
-    });
+            container.appendChild(divGroup);
+        });
+    } catch (erro) {
+        console.error("Erro ao processar campos dinâmicos:", erro);
+    }
 }
 
-function calcularProbabilidades() {
-    const natureza = document.getElementById("natureza").value;
-    if (!natureza) return;
+function calcularProbabilidadesDoBanco() {
+    if (!perguntasDaCategoriaAtual.length) return;
 
-    const dados = dadosOcorrencias[natureza];
     let pontuacaoNaturezas = {};
 
-    dados.campos.forEach(campo => {
-        const id = gerarId(campo.nome);
+    perguntasDaCategoriaAtual.forEach(campo => {
+        const id = gerarId(campo.nome_campo);
         const el = document.getElementById(id);
         if (!el) return;
 
-        if (campo.tipo === "dropdown" && el.value) {
-            const opcaoSelecionada = campo.opcoes.find(o => o.valor === el.value);
-            if (opcaoSelecionada && opcaoSelecionada.pesos) {
-                for (let [natReal, peso] of Object.entries(opcaoSelecionada.pesos)) {
-                    pontuacaoNaturezas[natReal] = (pontuacaoNaturezas[natReal] || 0) + peso;
+        if (campo.tipo_campo === "dropdown" && el.value) {
+            const opt = campo.opcoes_dropdown.find(o => o.valor_opcao === el.value);
+            if (opt && opt.pesos) {
+                for (let [nat, peso] of Object.entries(opt.pesos)) {
+                    pontuacaoNaturezas[nat] = (pontuacaoNaturezas[nat] || 0) + peso;
                 }
             }
         }
 
-        if (campo.tipo === "bool" && el.checked) {
+        if (campo.tipo_campo === "bool" && el.checked) {
             if (campo.pesos_true) {
-                for (let [natReal, peso] of Object.entries(campo.pesos_true)) {
-                    pontuacaoNaturezas[natReal] = (pontuacaoNaturezas[natReal] || 0) + peso;
+                for (let [nat, peso] of Object.entries(campo.pesos_true)) {
+                    pontuacaoNaturezas[nat] = (pontuacaoNaturezas[nat] || 0) + peso;
                 }
             }
         }
@@ -170,37 +189,53 @@ function calcularProbabilidades() {
         document.getElementById("painelSugestoes").style.display = "none";
     }
 }
-function gerarTexto() {
-    const categoria = document.getElementById("natureza").value;
-    if (!categoria) return;
 
-    const container = document.getElementById("camposDinamicos");
-    if (!container.children.length) return;
+function gerarTextoDoBanco() {
+    const selectCat = document.getElementById("natureza");
+    const categoriaTexto = selectCat.options[selectCat.selectedIndex]?.text || "";
+    
+    if (!categoriaTexto || !perguntasDaCategoriaAtual.length) return;
 
-    let stringOcorrencia = "";
-    const dados = dadosOcorrencias[categoria];
+    // Array para armazenar objetos { texto: '...', ordem: X }
+    let fragmentosFrase = [];
 
-    if (dados) {
-        dados.campos.forEach(campo => {
-            const id = gerarId(campo.nome);
-            const el = document.getElementById(id);
-            if (!el) return;
+    perguntasDaCategoriaAtual.forEach(campo => {
+        const id = gerarId(campo.nome_campo);
+        const el = document.getElementById(id);
+        if (!el) return;
 
-            if (campo.tipo === "dropdown" && el.value) {
-                const opt = campo.opcoes.find(o => o.valor === el.value);
-                if (opt && opt.texto_output) stringOcorrencia += opt.texto_output + " ";
+        if (campo.tipo_campo === "dropdown" && el.value) {
+            const opt = campo.opcoes_dropdown.find(o => o.valor_opcao === el.value);
+            if (opt && opt.texto_output) {
+                fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto });
             }
-            if (campo.tipo === "bool" && el.checked) {
-                if (campo.texto_output_true) stringOcorrencia += campo.texto_output_true + " ";
-            }
-        });
-    }
+        }
 
+        if (campo.tipo_campo === "bool" && el.checked) {
+            if (campo.texto_output_true) {
+                fragmentosFrase.push({ texto: campo.texto_output_true, ordem: campo.ordem_contexto_true });
+            }
+        }
+
+        if (campo.tipo_campo === "numero" && el.value) {
+            if (campo.texto_output_numero) {
+                // Substitui a tag chave {valor} pelo número digitado na tela
+                const txtPronto = campo.texto_output_numero.replace("{valor}", el.value);
+                fragmentosFrase.push({ texto: txtPronto, ordem: campo.ordem_contexto_numero });
+            }
+        }
+    });
+
+    // O TRUQUE DA COERÊNCIA: Ordena os fragmentos pela prioridade da frase antes de juntar
+    fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
+
+    // Une os fragmentos ordenados separando-os por um espaço simples
+    const historicoCompilado = fragmentosFrase.map(f => f.texto).join(" ");
     const compl = document.getElementById("descricao").value;
 
     let textoFinal = `=== REGISTRO DE OCORRÊNCIA COPOM ===\n`;
-    textoFinal += `CATEGORIA: ${categoria}\n`;
-    textoFinal += `HISTÓRICO COMPILADO: ${stringOcorrencia.trim()}\n`;
+    textoFinal += `CATEGORIA: ${categoriaTexto}\n`;
+    textoFinal += `HISTÓRICO COMPILADO: ${historicoCompilado.trim()}\n`;
     if (compl) textoFinal += `INFO COMPLEMENTAR: ${compl}\n`;
     textoFinal += `====================================`;
 
@@ -223,6 +258,7 @@ function limparPagina() {
     document.getElementById("resultado").value = "";
     document.getElementById("camposDinamicos").innerHTML = "";
     document.getElementById("painelSugestoes").style.display = "none";
+    perguntasDaCategoriaAtual = [];
 }
 
 function gerarId(texto) {
