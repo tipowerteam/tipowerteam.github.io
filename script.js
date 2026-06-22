@@ -2,14 +2,13 @@
 const SUPABASE_URL = "https://pzovfmlsmcyiupdxbwai.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bisQorN4Yz-WC3YAZTBsjA_HlPeI4h5";
 
-// Correção da inicialização global do Supabase utilizando a CDN do navegador
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let dadosNaturezas = [];
 let perguntasDaCategoriaAtual = [];
 
 window.onload = async () => {
-    // Aplica o tema salvo antes de carregar o resto para evitar o "piscar" de tela branca
+    // Aplica o tema salvo antes de carregar o resto
     if (localStorage.getItem("theme") === "dark") {
         document.body.setAttribute("data-theme", "dark");
         const btn = document.getElementById("btnTema");
