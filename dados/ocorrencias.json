@@ -1,102 +1,52 @@
 {
   "Contra Pessoa": {
-
     "campos": [
-
       {
-        "nome": "Tipo",
-
+        "nome": "Circunstancia",
         "tipo": "dropdown",
-
         "opcoes": [
-          "Lesão Corporal",
-          "Violência Doméstica",
-          "Ameaça"
+          {
+            "valor": "Agressão",
+            "texto_output": "Solicitante informa Agressão",
+            "pesos": {
+              "Lesão Corporal": 50,
+              "Violência Doméstica": 50
+            }
+          },
+          {
+            "valor": "Ameaça",
+            "texto_output": "Solicitante informa Ameaça de morte",
+            "pesos": {
+              "Ameaça": 80,
+              "Violência Doméstica": 20
+            }
+          }
         ]
       },
-
       {
-        "nome": "Autor no Local",
-
-        "tipo": "bool"
-      },
-
-      {
-        "nome": "Feridos",
-
-        "tipo": "bool"
-      }
-    ]
-  },
-
-  "Contra Patrimônio": {
-
-    "campos": [
-
-      {
-        "nome": "Tipo",
-
+        "nome": "Solicitante",
         "tipo": "dropdown",
-
         "opcoes": [
-          "Roubo",
-          "Furto",
-          "Dano"
+          {
+            "valor": "Vitima",
+            "texto_output": "em desfavor de si própria",
+            "pesos": {}
+          },
+          {
+            "valor": "Vizinho",
+            "texto_output": "na residencia de seu vizinho",
+            "pesos": { "Violência Doméstica": 10 }
+          }
         ]
       },
-
       {
-        "nome": "Quantidade de Autores",
-
-        "tipo": "numero"
-      }
-    ]
-  },
-
-  "Perturbação": {
-
-    "campos": [
-
-      {
-        "nome": "Tipo",
-
-        "tipo": "dropdown",
-
-        "opcoes": [
-          "Som",
-          "Gritaria",
-          "Fogos"
-        ]
-      },
-
-      {
-        "nome": "Denúncia Anônima",
-
-        "tipo": "bool"
-      }
-    ]
-  },
-
-  "Trânsito": {
-
-    "campos": [
-
-      {
-        "nome": "Rodovia",
-
-        "tipo": "dropdown",
-
-        "opcoes": [
-          "PR",
-          "BR",
-          "OUTRO"
-        ]
-      },
-
-      {
-        "nome": "Atendimento Médico",
-
-        "tipo": "bool"
+        "nome": "Vitima Feminina",
+        "tipo": "bool",
+        "texto_output_true": "Trata-se de vítima do sexo feminino (Lei Maria da Penha).",
+        "pesos_true": {
+          "Violência Doméstica": 60,
+          "Lesão Corporal": -10
+        }
       }
     ]
   }

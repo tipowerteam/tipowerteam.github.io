@@ -1,72 +1,42 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <title>
-        Sistema de Assistência para Atendentes INDRA
-    </title>
-
+    <title>Sistema de Assistência para Atendentes INDRA</title>
     <link rel="stylesheet" href="style.css">
-
 </head>
-
 <body>
 
-    <h1>
-        SISTEMA DE ASSISTÊNCIA PARA ATENDENTES INDRA
-    </h1>
+    <div class="header-container">
+        <h1>SISTEMA DE ASSISTÊNCIA PARA ATENDENTES INDRA</h1>
+        <button id="btnTema" onclick="alternarTema()">Modo Noturno</button>
+    </div>
 
     <hr>
 
-    <label for="nome">
-        Nome do Atendente
-    </label>
+    <label for="nomeAtendente">Nome do Atendente</label>
+    <input type="text" id="nomeAtendente" placeholder="Ex: Sd. Silva">
 
-    <input id="nome"
-           type="text"
-           placeholder="Digite seu nome">
-
-    <label for="natureza">
-        Natureza da Ocorrência
-    </label>
-
+    <label for="natureza">Macro Categoria da Ocorrência</label>
     <select id="natureza">
-
-        <option value="">
-            Carregando...
-        </option>
-
+        <option value="">Carregando...</option>
     </select>
 
     <div id="camposDinamicos"></div>
 
-    <label for="descricao">
-        Informações Complementares
-    </label>
+    <div id="painelSugestoes" class="sugestao-box" style="display: none;">
+        <h3>Possíveis Naturezas Sugeridas:</h3>
+        <ul id="listaSugestoes"></ul>
+    </div>
 
-    <textarea id="descricao"
-              placeholder="Digite informações adicionais">
-    </textarea>
+    <label for="descricao">Informações Complementares</label>
+    <textarea id="descricao" placeholder="Digite informações adicionais como características do autor, roupas, direção de fuga..."></textarea>
 
-    <button onclick="gerarTexto()">
+    <button onclick="gerarTexto()">Gerar Ocorrência</button>
 
-        Gerar Ocorrência
-
-    </button>
-
-    <h2>
-        Resultado
-    </h2>
-
-    <textarea id="resultado"
-              readonly>
-    </textarea>
+    <h2>Resultado do Despacho</h2>
+    <textarea id="resultado" readonly></textarea>
 
     <script src="script.js"></script>
-
 </body>
-
 </html>

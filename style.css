@@ -1,41 +1,76 @@
 :root {
-    --fonte-padrao: Arial;
-    --cor-fundo: #f5f5f5;
-    --cor-borda: #cccccc;
-    --cor-botao: #2f6fed;
-    --cor-botao-hover: #2457ba;
+    --bg-principal: #f5f7fb;
+    --bg-card: #ffffff;
+    --texto-principal: #2d3748;
+    --texto-secundario: #4a5568;
+    --borda: #cbd5e1;
+    --cor-botao: #1e3a8a;
+    --cor-botao-hover: #172554;
+}
+
+[data-theme="dark"] {
+    --bg-principal: #0f172a;
+    --bg-card: #1e293b;
+    --texto-principal: #f8fafc;
+    --texto-secundario: #94a3b8;
+    --borda: #334155;
+    --cor-botao: #3b82f6;
+    --cor-botao-hover: #2563eb;
 }
 
 body {
-    font-family: var(--fonte-padrao);
+    font-family: Arial, sans-serif;
     max-width: 1000px;
     margin: auto;
     padding: 20px;
-    background: var(--cor-fundo);
+    background: var(--bg-principal);
+    color: var(--texto-principal);
+    transition: background 0.3s, color 0.3s;
 }
 
-input,
-textarea,
-select {
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+input, textarea, select {
     width: 100%;
-    padding: 8px;
+    padding: 10px;
     margin-top: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     box-sizing: border-box;
-}
-
-textarea {
-    min-height: 120px;
+    background-color: var(--bg-card);
+    color: var(--texto-principal);
+    border: 1px solid var(--borda);
+    border-radius: 4px;
 }
 
 button {
     background: var(--cor-botao);
     color: white;
     border: none;
-    padding: 10px 15px;
+    padding: 12px 20px;
+    border-radius: 4px;
     cursor: pointer;
+    font-weight: bold;
 }
 
     button:hover {
         background: var(--cor-botao-hover);
     }
+
+.sugestao-box {
+    background-color: var(--bg-card);
+    border: 2px solid #eab308;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+#resultado {
+    min-height: 150px;
+    font-family: 'Courier New', Courier, monospace;
+    background-color: var(--bg-card);
+    border: 2px dashed var(--borda);
+}
