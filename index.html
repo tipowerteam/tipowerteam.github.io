@@ -14,10 +14,7 @@
 
     <hr>
 
-    <label for="nomeAtendente">Nome do Atendente</label>
-    <input type="text" id="nomeAtendente" placeholder="Ex: Sd. Silva">
-
-    <label for="natureza">Macro Categoria da Ocorrência</label>
+    <label for="natureza">Categoria da Ocorrência</label>
     <select id="natureza">
         <option value="">Carregando...</option>
     </select>
@@ -29,10 +26,14 @@
         <ul id="listaSugestoes"></ul>
     </div>
 
-    <label for="descricao">Informações Complementares</label>
+    <label for="descricao">Informações Complementares (Manual)</label>
     <textarea id="descricao" placeholder="Digite informações adicionais como características do autor, roupas, direção de fuga..."></textarea>
 
-    <button onclick="gerarTexto()">Gerar Ocorrência</button>
+    <div class="botoes-acoes">
+        <button onclick="gerarTexto()" class="btn-principal">Gerar Ocorrência</button>
+        <button onclick="copiarTexto()" class="btn-secundario">Copiar Output</button>
+        <button onclick="limparPagina()" class="btn-perigo">Limpar Tudo</button>
+    </div>
 
     <h2>Resultado do Despacho</h2>
     <textarea id="resultado" readonly></textarea>

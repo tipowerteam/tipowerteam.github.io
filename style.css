@@ -6,6 +6,8 @@
     --borda: #cbd5e1;
     --cor-botao: #1e3a8a;
     --cor-botao-hover: #172554;
+    --cor-sucesso: #10b981;
+    --cor-perigo: #ef4444;
 }
 
 [data-theme="dark"] {
@@ -46,6 +48,12 @@ input, textarea, select {
     border-radius: 4px;
 }
 
+.botoes-acoes {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
 button {
     background: var(--cor-botao);
     color: white;
@@ -58,6 +66,22 @@ button {
 
     button:hover {
         background: var(--cor-botao-hover);
+    }
+
+.btn-secundario {
+    background: var(--cor-sucesso);
+}
+
+    .btn-secundario:hover {
+        background: #059669;
+    }
+
+.btn-perigo {
+    background: var(--cor-perigo);
+}
+
+    .btn-perigo:hover {
+        background: #dc2626;
     }
 
 .sugestao-box {

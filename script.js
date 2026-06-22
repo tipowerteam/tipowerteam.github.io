@@ -9,17 +9,21 @@ window.onload = async () => {
     // Recupera o tema salvo no navegador do atendente
     if (localStorage.getItem("theme") === "dark") {
         document.body.setAttribute("data-theme", "dark");
+        document.getElementById("btnTema").textContent = "Modo Claro";
     }
 };
 
 function alternarTema() {
     const atual = document.body.getAttribute("data-theme");
+    const botao = document.getElementById("btnTema");
     if (atual === "dark") {
         document.body.removeAttribute("data-theme");
         localStorage.setItem("theme", "light");
+        botao.textContent = "Modo Noturno";
     } else {
         document.body.setAttribute("data-theme", "dark");
         localStorage.setItem("theme", "dark");
+        botao.textContent = "Modo Claro";
     }
 }
 
@@ -38,7 +42,7 @@ async function carregarDados() {
 
 function preencherNaturezas() {
     const select = document.getElementById("natureza");
-    select.innerHTML = '<option value="">Selecione a Categoria</option>';
+    select.innerHTML = '<option value="">Selecione a Categoria...</option>';
     dadosNaturezas.naturezas.forEach(nat => {
         const option = document.createElement("option");
         option.value = nat;
@@ -52,6 +56,7 @@ function atualizarCampos() {
     const container = document.getElementById("camposDinamicos");
     container.innerHTML = "";
     document.getElementById("painelSugestoes").style.display = "none";
+    document.getElementById("resultado").value = ""; // Limpa output anterior ao trocar
 
     if (!natureza || !dadosOcorrencias[natureza]) return;
 
@@ -76,7 +81,6 @@ function atualizarCampos() {
                 option.textContent = opcao.valor;
                 select.appendChild(option);
             });
-            // Sempre que o atendente mudar algo, recalcula a natureza provável
             select.addEventListener("change", calcularProbabilidades);
             divGroup.appendChild(select);
         }
@@ -133,7 +137,6 @@ function calcularProbabilidades() {
         }
     });
 
-    // Renderizar na tela as naturezas mais prováveis
     const lista = document.getElementById("listaSugestoes");
     lista.innerHTML = "";
 
@@ -145,7 +148,6 @@ function calcularProbabilidades() {
         document.getElementById("painelSugestoes").style.display = "block";
         entradasOrdenadas.forEach(([nomeNat, pontos]) => {
             const li = document.createElement("li");
-            // Limitando a exibição ao teto lógico de 100% de compatibilidade fictícia por pontos
             const porcentagem = pontos > 100 ? 100 : pontos;
             li.innerHTML = `<strong>${nomeNat}</strong> - (${porcentagem}% de compatibilidade)`;
             lista.appendChild(li);
@@ -156,8 +158,11 @@ function calcularProbabilidades() {
 }
 
 function gerarTexto() {
-    const nome = document.getElementById("nomeAtendente").value || "NÃO INFORMADO";
     const categoria = document.getElementById("natureza").value;
+    if (!categoria) {
+        alert("Por favor, selecione uma categoria antes de gerar.");
+        return;
+    }
 
     let stringOcorrencia = "";
     const dados = dadosOcorrencias[categoria];
@@ -181,7 +186,6 @@ function gerarTexto() {
     const compl = document.getElementById("descricao").value;
 
     let textoFinal = `=== REGISTRO DE OCORRÊNCIA COPOM ===\n`;
-    textoFinal += `ATENDENTE: ${nome}\n`;
     textoFinal += `CATEGORIA: ${categoria}\n`;
     textoFinal += `HISTÓRICO COMPILADO: ${stringOcorrencia.trim()}\n`;
     if (compl) textoFinal += `INFO COMPLEMENTAR: ${compl}\n`;
@@ -190,8 +194,26 @@ function gerarTexto() {
     document.getElementById("resultado").value = textoFinal;
 }
 
+function copiarTexto() {
+    const resultado = document.getElementById("resultado");
+    if (!resultado.value) {
+        alert("Não há texto gerado para copiar!");
+        return;
+    }
+    navigator.clipboard.writeText(resultado.value);
+    alert("Copiado para a área de transferência!");
+}
+
+function limparPagina() {
+    document.getElementById("natureza").value = "";
+    document.getElementById("descricao").value = "";
+    document.getElementById("resultado").value = "";
+    document.getElementById("camposDinamicos").innerHTML = "";
+    document.getElementById("painelSugestoes").style.display = "none";
+}
+
 function gerarId(texto) {
     return texto.toLowerCase()
-        .replace(/[^a-z0-9]/g, "_") // Cria IDs padronizados de forma mais segura
+        .replace(/[^a-z0-9]/g, "_")
         .replace(/__+/g, "_");
 }
