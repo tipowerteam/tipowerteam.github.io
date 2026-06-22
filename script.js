@@ -4,14 +4,27 @@ let dadosOcorrencias;
 window.onload = async () => {
     await carregarDados();
     preencherNaturezas();
-    document.getElementById("natureza").addEventListener("change", atualizarCampos);
 
-    // Recupera o tema salvo no navegador do atendente
+    document.getElementById("natureza")
+        .addEventListener("change", atualizarCampos);
+
+    document.getElementById("descricao")
+        .addEventListener("input", atualizarTudo);
+
     if (localStorage.getItem("theme") === "dark") {
         document.body.setAttribute("data-theme", "dark");
         document.getElementById("btnTema").textContent = "Modo Claro";
     }
 };
+
+let timeout;
+function atualizarTudo() {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        calcularProbabilidades();
+        gerarTexto();
+    }, 200);
+}
 
 function alternarTema() {
     const atual = document.body.getAttribute("data-theme");
@@ -81,7 +94,7 @@ function atualizarCampos() {
                 option.textContent = opcao.valor;
                 select.appendChild(option);
             });
-            select.addEventListener("change", calcularProbabilidades);
+            select.addEventListener("change", atualizarTudo);
             divGroup.appendChild(select);
         }
 
@@ -91,7 +104,7 @@ function atualizarCampos() {
             checkbox.id = id;
             checkbox.style.width = "auto";
             checkbox.style.marginLeft = "10px";
-            checkbox.addEventListener("change", calcularProbabilidades);
+            checkbox.addEventListener("change", atualizarTudo);
             divGroup.appendChild(checkbox);
         }
 
@@ -99,7 +112,7 @@ function atualizarCampos() {
             const numero = document.createElement("input");
             numero.type = "number";
             numero.id = id;
-            numero.addEventListener("input", calcularProbabilidades);
+            numero.addEventListener("input", atualizarTudo);
             divGroup.appendChild(numero);
         }
 
@@ -157,12 +170,17 @@ function calcularProbabilidades() {
     }
 }
 
+function atualizarTudo() {
+    calcularProbabilidades();
+    gerarTexto();
+}
+
 function gerarTexto() {
     const categoria = document.getElementById("natureza").value;
-    if (!categoria) {
-        alert("Por favor, selecione uma categoria antes de gerar.");
-        return;
-    }
+    if (!categoria) return;
+
+    const container = document.getElementById("camposDinamicos");
+    if (!container.children.length) return;
 
     let stringOcorrencia = "";
     const dados = dadosOcorrencias[categoria];

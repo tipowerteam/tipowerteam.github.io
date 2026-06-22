@@ -20,6 +20,16 @@
     --cor-botao-hover: #2563eb;
 }
 
+.logo h1 {
+    margin: 0;
+}
+
+.subtitulo {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
 body {
     font-family: Arial, sans-serif;
     max-width: 1000px;
