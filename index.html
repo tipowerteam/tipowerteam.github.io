@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>SIGOC</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
 
@@ -21,22 +22,22 @@
 
     <div id="camposDinamicos"></div>
 
-    <div id="painelSugestoes" class="sugestao-box" style="display: none;">
-        <h3>Possíveis Naturezas Sugeridas:</h3>
-        <ul id="listaSugestoes"></ul>
-    </div>
-
     <label for="descricao">Informações Complementares (Manual)</label>
     <textarea id="descricao" placeholder="Digite informações adicionais"></textarea>
 
+    <h2>Resultado do Despacho</h2>
+    <textarea id="resultado" readonly></textarea>
+
     <div class="botoes-acoes">
-        <button onclick="gerarTexto()" class="btn-principal">Gerar Ocorrência</button> <!--<# seria interessante remover on botao para gerar texto #>-->
+        <!--<button onclick="gerarTexto()" class="btn-principal">Gerar Ocorrência</button>-->
         <button onclick="copiarTexto()" class="btn-secundario">Copiar Output</button>
         <button onclick="limparPagina()" class="btn-perigo">Limpar Tudo</button>
     </div>
 
-    <h2>Resultado do Despacho</h2>
-    <textarea id="resultado" readonly></textarea>
+    <div id="painelSugestoes" class="sugestao-box" style="display: none;">
+        <h3>Possíveis Naturezas Sugeridas:</h3>
+        <ul id="listaSugestoes"></ul>
+    </div>
 
     <script src="script.js"></script>
 </body>
