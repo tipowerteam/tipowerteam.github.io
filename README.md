@@ -2,8 +2,6 @@
 
 Sistema desenvolvido para auxiliar atendentes civis do COPOM no registro, padronização e gerenciamento de ocorrências policiais.
 
-Objetivo
-
 O SIGOC tem como finalidade fornecer uma ferramenta de apoio operacional aos atendentes, permitindo a geração rápida e padronizada de descrições de ocorrências, reduzindo erros operacionais e aumentando a qualidade das informações encaminhadas às equipes de atendimento.
 
 # Principais Benefícios:
