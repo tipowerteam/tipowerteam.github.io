@@ -2,13 +2,14 @@
 const SUPABASE_URL = "https://pzovfmlsmcyiupdxbwai.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bisQorN4Yz-WC3YAZTBsjA_HlPeI4h5";
 
+// Utiliza o objeto global injetado pela CDN do Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let dadosNaturezas = [];
 let perguntasDaCategoriaAtual = [];
 
 window.onload = async () => {
-    // Aplica o tema salvo antes de carregar o resto
+    // Aplica o tema salvo antes de carregar o resto para evitar o flash de tela branca
     if (localStorage.getItem("theme") === "dark") {
         document.body.setAttribute("data-theme", "dark");
         const btn = document.getElementById("btnTema");
@@ -177,6 +178,7 @@ function calcularProbabilidadesDoBanco() {
     });
 
     const lista = document.getElementById("listaSugestoes");
+    if (!lista) return;
     lista.innerHTML = "";
 
     const entradasOrdenadas = Object.entries(pontuacaoNaturezas)
@@ -247,7 +249,7 @@ function gerarTextoDoBanco() {
 
 function copiarTexto() {
     const resultado = document.getElementById("resultado");
-    if (!resultado.value) {
+    if (!resultado || !resultado.value) {
         alert("Não há texto gerado para copiar!");
         return;
     }
