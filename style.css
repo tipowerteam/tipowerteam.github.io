@@ -78,6 +78,13 @@ button {
         background: var(--cor-botao-hover);
     }
 
+#btnTema {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 1000;
+}
+
 .btn-secundario {
     background: var(--cor-sucesso);
 }

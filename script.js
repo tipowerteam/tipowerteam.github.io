@@ -18,6 +18,7 @@ window.onload = async () => {
 };
 
 let timeout;
+
 function atualizarTudo() {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
@@ -169,12 +170,6 @@ function calcularProbabilidades() {
         document.getElementById("painelSugestoes").style.display = "none";
     }
 }
-
-function atualizarTudo() {
-    calcularProbabilidades();
-    gerarTexto();
-}
-
 function gerarTexto() {
     const categoria = document.getElementById("natureza").value;
     if (!categoria) return;
