@@ -1,24 +1,28 @@
 // CONFIGURAÇÃO DO SUPABASE
 const SUPABASE_URL = "https://pzovfmlsmcyiupdxbwai.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bisQorN4Yz-WC3YAZTBsjA_HlPeI4h5";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Correção da inicialização global do Supabase utilizando a CDN do navegador
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let dadosNaturezas = [];
 let perguntasDaCategoriaAtual = [];
 
 window.onload = async () => {
+    // Aplica o tema salvo antes de carregar o resto para evitar o "piscar" de tela branca
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.setAttribute("data-theme", "dark");
+        const btn = document.getElementById("btnTema");
+        if (btn) btn.textContent = "Modo Claro";
+    }
+
     await carregarCategoriasDoBanco();
-    
+
     document.getElementById("natureza")
         .addEventListener("change", atualizarCamposDoBanco);
 
     document.getElementById("descricao")
         .addEventListener("input", atualizarTudo);
-
-    if (localStorage.getItem("theme") === "dark") {
-        document.body.setAttribute("data-theme", "dark");
-        document.getElementById("btnTema").textContent = "Modo Claro";
-    }
 };
 
 let timeout;
@@ -33,26 +37,27 @@ function atualizarTudo() {
 function alternarTema() {
     const typeofTheme = document.body.getAttribute("data-theme");
     const botao = document.getElementById("btnTema");
+
     if (typeofTheme === "dark") {
         document.body.removeAttribute("data-theme");
         localStorage.setItem("theme", "light");
-        botao.textContent = "Modo Noturno";
+        if (botao) botao.textContent = "Modo Noturno";
     } else {
         document.body.setAttribute("data-theme", "dark");
         localStorage.setItem("theme", "dark");
-        botao.textContent = "Modo Claro";
+        if (botao) botao.textContent = "Modo Claro";
     }
 }
 
 async function carregarCategoriasDoBanco() {
     try {
-        let { data, error } = await supabase
+        let { data, error } = await supabaseClient
             .from('categorias')
             .select('*')
             .order('nome', { ascending: true });
 
         if (error) throw error;
-        dadosNaturezas = data;
+        dadosNaturezas = data || [];
 
         const select = document.getElementById("natureza");
         select.innerHTML = '<option value="">Selecione a Categoria...</option>';
@@ -81,7 +86,7 @@ async function atualizarCamposDoBanco() {
     }
 
     try {
-        let { data: perguntas, error } = await supabase
+        let { data: perguntas, error } = await supabaseClient
             .from('perguntas')
             .select(`
                 id, nome_campo, tipo_campo, texto_output_true, ordem_contexto_true, pesos_true,
@@ -92,9 +97,9 @@ async function atualizarCamposDoBanco() {
             .order('ordem_exibicao', { ascending: true });
 
         if (error) throw error;
-        perguntasDaCategoriaAtual = perguntas;
+        perguntasDaCategoriaAtual = perguntas || [];
 
-        perguntas.forEach(campo => {
+        perguntasDaCategoriaAtual.forEach(campo => {
             const divGroup = document.createElement("div");
             const label = document.createElement("label");
             label.textContent = campo.nome_campo;
@@ -106,12 +111,14 @@ async function atualizarCamposDoBanco() {
                 const select = document.createElement("select");
                 select.id = id;
                 select.innerHTML = '<option value="">Selecione...</option>';
-                campo.opcoes_dropdown.forEach(opcao => {
-                    const option = document.createElement("option");
-                    option.value = opcao.valor_opcao;
-                    option.textContent = opcao.valor_opcao;
-                    select.appendChild(option);
-                });
+                if (campo.opcoes_dropdown) {
+                    campo.opcoes_dropdown.forEach(opcao => {
+                        const option = document.createElement("option");
+                        option.value = opcao.valor_opcao;
+                        option.textContent = opcao.valor_opcao;
+                        select.appendChild(option);
+                    });
+                }
                 select.addEventListener("change", atualizarTudo);
                 divGroup.appendChild(select);
             }
@@ -153,7 +160,7 @@ function calcularProbabilidadesDoBanco() {
         if (!el) return;
 
         if (campo.tipo_campo === "dropdown" && el.value) {
-            const opt = campo.opcoes_dropdown.find(o => o.valor_opcao === el.value);
+            const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
             if (opt && opt.pesos) {
                 for (let [nat, peso] of Object.entries(opt.pesos)) {
                     pontuacaoNaturezas[nat] = (pontuacaoNaturezas[nat] || 0) + peso;
@@ -193,10 +200,9 @@ function calcularProbabilidadesDoBanco() {
 function gerarTextoDoBanco() {
     const selectCat = document.getElementById("natureza");
     const categoriaTexto = selectCat.options[selectCat.selectedIndex]?.text || "";
-    
+
     if (!categoriaTexto || !perguntasDaCategoriaAtual.length) return;
 
-    // Array para armazenar objetos { texto: '...', ordem: X }
     let fragmentosFrase = [];
 
     perguntasDaCategoriaAtual.forEach(campo => {
@@ -205,7 +211,7 @@ function gerarTextoDoBanco() {
         if (!el) return;
 
         if (campo.tipo_campo === "dropdown" && el.value) {
-            const opt = campo.opcoes_dropdown.find(o => o.valor_opcao === el.value);
+            const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
             if (opt && opt.texto_output) {
                 fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto });
             }
@@ -219,17 +225,15 @@ function gerarTextoDoBanco() {
 
         if (campo.tipo_campo === "numero" && el.value) {
             if (campo.texto_output_numero) {
-                // Substitui a tag chave {valor} pelo número digitado na tela
                 const txtPronto = campo.texto_output_numero.replace("{valor}", el.value);
                 fragmentosFrase.push({ texto: txtPronto, ordem: campo.ordem_contexto_numero });
             }
         }
     });
 
-    // O TRUQUE DA COERÊNCIA: Ordena os fragmentos pela prioridade da frase antes de juntar
+    // Ordenação garantindo que a hierarquia estrutural/gramatical das palavras seja respeitada
     fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
 
-    // Une os fragmentos ordenados separando-os por um espaço simples
     const historicoCompilado = fragmentosFrase.map(f => f.texto).join(" ");
     const compl = document.getElementById("descricao").value;
 

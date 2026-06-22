@@ -10,7 +10,7 @@
     --cor-perigo: #ef4444;
 }
 
-[data-theme="dark"] {
+body[data-theme="dark"] {
     --bg-principal: #0f172a;
     --bg-card: #1e293b;
     --texto-principal: #f8fafc;
@@ -38,12 +38,6 @@ body {
     background: var(--bg-principal);
     color: var(--texto-principal);
     transition: background 0.3s, color 0.3s;
-}
-
-.header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
 input, textarea, select {
