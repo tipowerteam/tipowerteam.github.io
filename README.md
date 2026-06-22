@@ -1,8 +1,8 @@
-# SIGOC - Sistema Integrado para Gestão de Ocorrências do COPOM
+# SAOC - Sistema de Apoio a Ocorrências COPOM
 
 Sistema desenvolvido para auxiliar atendentes civis do COPOM no registro, padronização e gerenciamento de ocorrências policiais.
 
-O SIGOC tem como finalidade fornecer uma ferramenta de apoio operacional aos atendentes, permitindo a geração rápida e padronizada de descrições de ocorrências, reduzindo erros operacionais e aumentando a qualidade das informações encaminhadas às equipes de atendimento.
+O SAOC tem como finalidade fornecer uma ferramenta de apoio operacional aos atendentes, permitindo a geração rápida e padronizada de descrições de ocorrências, reduzindo erros operacionais e aumentando a qualidade das informações encaminhadas às equipes de atendimento.
 
 # Principais Benefícios:
 * Padronização das descrições das ocorrências com riqueza de detalhes.
@@ -35,7 +35,7 @@ O SIGOC tem como finalidade fornecer uma ferramenta de apoio operacional aos ate
 * Histórico de alterações e auditoria.
 * Sistema de reconhecimento e acompanhamento de participação da equipe.
 
-O SIGOC não substitui os sistemas oficiais utilizados pelo COPOM.
+O SAOC não substitui os sistemas oficiais utilizados pelo COPOM.
 
 Seu objetivo é atuar como ferramenta auxiliar de apoio operacional, fornecendo referências, modelos e orientações para aumentar a qualidade, velocidade e consistência dos registros produzidos pelos atendentes.
 
