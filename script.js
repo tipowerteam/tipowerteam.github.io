@@ -56,12 +56,11 @@ function alternarCamposRegistro() {
     document.getElementById("areaDropdownNovoConfig").style.display = tipo === 'dropdown_novo' ? 'block' : 'none';
 }
 
-// CORRIGIDO: Agora busca a coluna real 'natureza' em vez de 'nome'
 async function baixarEGuardarTodasAsNaturezas() {
     try {
         let { data, error } = await supabaseClient
             .from('naturezas_copom')
-            .select('id, natureza'); // Alterado de 'id, nome' para 'id, natureza'
+            .select('id, natureza');
 
         if (error) throw error;
         listaMapeadaNaturezasCopom = data || [];
@@ -70,7 +69,6 @@ async function baixarEGuardarTodasAsNaturezas() {
     }
 }
 
-// CORRIGIDO: Atualizado para filtrar e ler pela propriedade .natureza
 function filtrarNaturezasAutocomplete(termoBusca) {
     const painel = document.getElementById("painelSugestoesInstantes");
     if (!termoBusca || termoBusca.trim().length < 1) {
@@ -80,7 +78,7 @@ function filtrarNaturezasAutocomplete(termoBusca) {
 
     const termoLimpo = termoBusca.toUpperCase();
     const filtradas = listaMapeadaNaturezasCopom.filter(nat =>
-        nat.natureza && nat.natureza.toUpperCase().includes(termoLimpo) // Alterado para .natureza
+        nat.natureza && nat.natureza.toUpperCase().includes(termoLimpo)
     );
 
     painel.innerHTML = "";
@@ -90,11 +88,11 @@ function filtrarNaturezasAutocomplete(termoBusca) {
         filtradas.slice(0, 10).forEach(nat => {
             const div = document.createElement("div");
             div.className = "item-sugestao";
-            div.textContent = nat.natureza; // Alterado para .natureza
+            div.textContent = nat.natureza;
             div.style.padding = "8px";
             div.style.cursor = "pointer";
             div.onclick = () => {
-                vincularNaturezaAdmin(nat.id, nat.natureza); // Alterado para .natureza
+                vincularNaturezaAdmin(nat.id, nat.natureza);
             };
             painel.appendChild(div);
         });
@@ -117,7 +115,6 @@ function removerNaturezaAdmin(id) {
     renderizarTagsNaturezas();
 }
 
-// CORRIGIDO: Renderiza as tags usando o campo .natureza recuperado da lista
 function renderizarTagsNaturezas() {
     const ul = document.getElementById("listaNaturezasVinculadas");
     ul.innerHTML = "";
@@ -125,7 +122,7 @@ function renderizarTagsNaturezas() {
         const natObj = listaMapeadaNaturezasCopom.find(n => n.id === id);
         if (natObj) {
             const li = document.createElement("li");
-            li.innerHTML = `${natObj.natureza} <button class="btn-remover-tag" onclick="removerNaturezaAdmin(${id})">&times;</button>`; // Alterado para natObj.natureza
+            li.innerHTML = `${natObj.natureza} <button class="btn-remover-tag" onclick="removerNaturezaAdmin(${id})">&times;</button>`;
             ul.appendChild(li);
         }
     });
@@ -288,7 +285,6 @@ async function carregarCategoriasDoBanco() {
     } catch (erro) { console.error(erro); }
 }
 
-// OBSERVAÇÃO: Se sua tabela 'vinculos_pesos' fizer join com 'naturezas_copom', certifique-se de referenciar 'natureza' também se necessário
 async function atualizarCamposDoBanco() {
     const categoriaId = document.getElementById("natureza").value;
     const container = document.getElementById("camposDinamicos");
@@ -320,10 +316,9 @@ async function atualizarCamposDoBanco() {
                 campo.opcoes_dropdown = opcoes || [];
             }
 
-            // CORRIGIDO INTERNAMENTE NO JOIN (se você usar o nome de exibição em algum lugar):
             let { data: vPesos } = await supabaseClient
                 .from('vinculos_pesos')
-                .select('natureza_id, naturezas_copom(natureza)') // Modificado sub-select de 'nome' para 'natureza'
+                .select('natureza_id, naturezas_copom(natureza)')
                 .eq('pergunta_id', campo.id);
             campo.vinculos_pesos = vPesos || [];
 
@@ -331,18 +326,21 @@ async function atualizarCamposDoBanco() {
                 for (let opt of campo.opcoes_dropdown) {
                     let { data: vOptPesos } = await supabaseClient
                         .from('vinculos_pesos')
-                        .select('natureza_id, naturezas_copom(natureza)') // Modificado sub-select de 'nome' para 'natureza'
+                        .select('natureza_id, naturezas_copom(natureza)')
                         .eq('opcao_dropdown_id', opt.id);
                     opt.vinculos_pesos = vOptPesos || [];
                 }
             }
 
             const divGroup = document.createElement("div");
+
+            // CORREÇÃO DE ACESSIBILIDADE: Gerar ID primeiro e passá-lo para o label.htmlFor
+            const id = gerarId(campo.nome_campo);
+
             const label = document.createElement("label");
             label.textContent = campo.nome_campo;
+            label.htmlFor = id; // Vincula explicitamente
             divGroup.appendChild(label);
-
-            const id = gerarId(campo.nome_campo);
 
             if (campo.tipo_campo === "dropdown") {
                 const select = document.createElement("select");
@@ -400,7 +398,6 @@ function calcularProbabilidadesDoBanco() {
             const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
             if (opt && opt.vinculos_pesos) {
                 opt.vinculos_pesos.forEach(v => {
-                    // Mapeado de v.naturezas_copom.nome para v.naturezas_copom.natureza
                     if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
                 });
             }
@@ -409,7 +406,6 @@ function calcularProbabilidadesDoBanco() {
         if (campo.tipo_campo === "bool" && el.checked) {
             if (campo.vinculos_pesos) {
                 campo.vinculos_pesos.forEach(v => {
-                    // Mapeado de v.naturezas_copom.nome para v.naturezas_copom.natureza
                     if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
                 });
             }
@@ -418,7 +414,6 @@ function calcularProbabilidadesDoBanco() {
         if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value.trim() !== "") {
             if (campo.vinculos_pesos) {
                 campo.vinculos_pesos.forEach(v => {
-                    // Mapeado de v.naturezas_copom.nome para v.naturezas_copom.natureza
                     if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
                 });
             }
@@ -496,7 +491,7 @@ function gerarTextoDoBanco() {
     textoFinal += `CATEGORIA: ${categoriaTexto}\n`;
     textoFinal += `HISTÓRICO COMPILADO: ${historicoCompilado.trim()}\n`;
     if (compl) textoFinal += `INFO COMPLEMENTAR: ${compl}\n`;
-    textoFinal += `====================================`;
+    textoFinal += `====================================\n`;
     textoFinal += `TA EM FAZE DE TESTE GENTE CALMA`;
 
     document.getElementById("resultado").value = textoFinal;
