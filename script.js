@@ -496,7 +496,7 @@ function gerarTextoDoBanco() {
     textoFinal += `CATEGORIA: ${categoriaTexto}\n`;
     textoFinal += `HISTÓRICO COMPILADO: ${historicoCompilado.trim()}\n`;
     if (compl) textoFinal += `INFO COMPLEMENTAR: ${compl}\n`;
-    textoFinal += `====================================`;
+    textoFinal += `====================================\n`;
     textoFinal += `TA EM FAZE DE TESTE GENTE CALMA`;
 
     document.getElementById("resultado").value = textoFinal;
