@@ -2,14 +2,14 @@
 const SUPABASE_URL = "https://pzovfmlsmcyiupdxbwai.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bisQorN4Yz-WC3YAZTBsjA_HlPeI4h5";
 
-// Utiliza o objeto global injetado pela CDN do Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let dadosNaturezas = [];
 let perguntasDaCategoriaAtual = [];
+let listaMapeadaNaturezasCopom = []; // Armazena as 770 naturezas vindas do banco
+let naturezasSelecionadasParaOId = []; // Armazena temporariamente os vínculos criados no painel
 
 window.onload = async () => {
-    // Aplica o tema salvo antes de carregar o resto para evitar o flash de tela branca
     if (localStorage.getItem("theme") === "dark") {
         document.body.setAttribute("data-theme", "dark");
         const btn = document.getElementById("btnTema");
@@ -17,6 +17,7 @@ window.onload = async () => {
     }
 
     await carregarCategoriasDoBanco();
+    await carregarNaturezasCopomDatalist();
 
     document.getElementById("natureza")
         .addEventListener("change", atualizarCamposDoBanco);
@@ -49,6 +50,177 @@ function alternarTema() {
     }
 }
 
+// CONTROLADORES DA SIDEBAR ADMINISTRATIVA
+function alternarPainelAdmin() {
+    const painel = document.getElementById("painelAdmin");
+    painel.classList.toggle("aberto");
+}
+
+function alternarCamposRegistro() {
+    const tipo = document.getElementById("regTipoCampo").value;
+    document.getElementById("areaDropdownConfig").style.display = tipo === 'dropdown' ? 'block' : 'none';
+}
+
+// BUSCA AS 770 NATUREZAS REAIS PARA O AUTOCOMPLETE
+async function carregarNaturezasCopomDatalist() {
+    try {
+        let { data, error } = await supabaseClient
+            .from('naturezas_copom')
+            .select('id, nome')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+        listaMapeadaNaturezasCopom = data || [];
+
+        const datalist = document.getElementById("listaNaturezasCopom");
+        datalist.innerHTML = "";
+        listaMapeadaNaturezasCopom.forEach(nat => {
+            const option = document.createElement("option");
+            option.value = nat.nome;
+            option.dataset.id = nat.id;
+            datalist.appendChild(option);
+        });
+    } catch (err) {
+        console.error("Erro ao alimentar datalist de naturezas:", err);
+    }
+}
+
+// ADICIONA NATUREZAS TEMPORARIAMENTE NA LISTA DO PAINEL ANTES DE GRAVAR
+function adicionarNaturezaNaLista() {
+    const nomeDigitado = document.getElementById("buscaNatureza").value;
+    const pesoInformado = parseInt(document.getElementById("regPeso").value) || 0;
+
+    const naturezaEncontrada = listaMapeadaNaturezasCopom.find(n => n.nome === nomeDigitado);
+    if (!naturezaEncontrada) {
+        alert("Natureza não encontrada na lista oficial do COPOM. Selecione uma sugestão válida.");
+        return;
+    }
+
+    if (naturezasSelecionadasParaOId.some(n => n.id === naturezaEncontrada.id)) {
+        alert("Esta natureza já foi adicionada!");
+        return;
+    }
+
+    naturezasSelecionadasParaOId.push({
+        id: naturezaEncontrada.id,
+        nome: naturezaEncontrada.nome,
+        peso: pesoInformado
+    });
+
+    const ul = document.getElementById("listaNaturezasVinculadas");
+    const li = document.createElement("li");
+    li.innerHTML = `📌 <strong>${naturezaEncontrada.nome}</strong> (Peso: ${pesoInformado}%)`;
+    ul.appendChild(li);
+
+    document.getElementById("buscaNatureza").value = "";
+}
+
+// ENVIA A PERGUNTA/OPÇÃO E SEUS RESPECTIVOS VÍNCULOS DE PESO PARA O BANCO
+async function salvarNovoRegistroCompleto() {
+    const nomeRegistrador = document.getElementById("regAtendente").value.trim();
+    const nomeCampo = document.getElementById("regNomeCampo").value.trim();
+    const tipoCampo = document.getElementById("regTipoCampo").value;
+    const textoOutput = document.getElementById("regTextoOutput").value.trim();
+    const ordem = parseInt(document.getElementById("regOrdem").value);
+    const categoriaId = document.getElementById("natureza").value;
+
+    if (!nomeRegistrador || !nomeCampo || !textoOutput || !categoriaId) {
+        alert("Por favor, preencha todos os campos do painel e verifique se uma Categoria de Ocorrência está selecionada no painel central.");
+        return;
+    }
+
+    if (naturezasSelecionadasParaOId.length === 0) {
+        alert("Adicione ao menos uma Natureza do COPOM e defina seu peso antes de registrar!");
+        return;
+    }
+
+    try {
+        if (tipoCampo === 'bool' || tipoCampo === 'numero') {
+            const { data: novaPergunta, error: errPerg } = await supabaseClient
+                .from('perguntas')
+                .insert([{
+                    categoria_id: categoriaId,
+                    nome_campo: nomeCampo,
+                    tipo_campo: tipoCampo,
+                    texto_output_true: tipoCampo === 'bool' ? textoOutput : null,
+                    ordem_contexto_true: tipoCampo === 'bool' ? ordem : null,
+                    texto_output_numero: tipoCampo === 'numero' ? textoOutput : null,
+                    ordem_contexto_numero: tipoCampo === 'numero' ? ordem : null
+                }]).select();
+
+            if (errPerg) throw errPerg;
+            const perguntaId = novaPergunta[0].id;
+
+            for (const nat of naturezasSelecionadasParaOId) {
+                await supabaseClient.from('vinculos_pesos').insert([{
+                    pergunta_id: perguntaId,
+                    natureza_id: nat.id,
+                    peso: nat.peso
+                }]);
+            }
+
+        } else if (tipoCampo === 'dropdown') {
+            let { data: perguntaMae } = await supabaseClient
+                .from('perguntas')
+                .select('id')
+                .eq('nome_campo', nomeCampo)
+                .eq('categoria_id', categoriaId)
+                .maybeSingle();
+
+            if (!perguntaMae) {
+                const { data: novaPergMae } = await supabaseClient
+                    .from('perguntas')
+                    .insert([{ categoria_id: categoriaId, nome_campo: nomeCampo, tipo_campo: 'dropdown' }])
+                    .select();
+                perguntaMae = novaPergMae[0];
+            }
+
+            const valorOpcao = document.getElementById("regValorOpcao").value.trim();
+            if (!valorOpcao) {
+                alert("Para campos do tipo dropdown, defina o Valor Selecionável da Opção.");
+                return;
+            }
+
+            const { data: novaOpcao, error: errOpt } = await supabaseClient
+                .from('opcoes_dropdown')
+                .insert([{
+                    pergunta_id: perguntaMae.id,
+                    valor_opcao: valorOpcao,
+                    texto_output: textoOutput,
+                    ordem_contexto: ordem
+                }]).select();
+
+            if (errOpt) throw errOpt;
+            const opcaoId = novaOpcao[0].id;
+
+            for (const nat of naturezasSelecionadasParaOId) {
+                await supabaseClient.from('vinculos_pesos').insert([{
+                    opcao_dropdown_id: opcaoId,
+                    natureza_id: nat.id,
+                    peso: nat.peso
+                }]);
+            }
+        }
+
+        alert(`Obrigado ${nomeRegistrador}, o registro foi adicionado e associado com sucesso!`);
+
+        // Limpa o painel admin
+        document.getElementById("regNomeCampo").value = "";
+        document.getElementById("regValorOpcao").value = "";
+        document.getElementById("regTextoOutput").value = "";
+        document.getElementById("listaNaturezasVinculadas").innerHTML = "";
+        naturezasSelecionadasParaOId = [];
+
+        alternarPainelAdmin();
+        await atualizarCamposDoBanco();
+
+    } catch (err) {
+        console.error("Erro ao gravar dados pelas tabelas relacionais:", err);
+        alert("Falha ao sincronizar o registro com o banco de dados.");
+    }
+}
+
+// LOGICAS DO SISTEMA PRINCIPAL (ATENDENTE)
 async function carregarCategoriasDoBanco() {
     try {
         let { data, error } = await supabaseClient
@@ -68,8 +240,7 @@ async function carregarCategoriasDoBanco() {
             select.appendChild(option);
         });
     } catch (erro) {
-        console.error("Erro ao conectar com o Supabase:", erro);
-        alert("Erro ao carregar as categorias.");
+        console.error("Erro ao carregar as categorias:", erro);
     }
 }
 
@@ -89,9 +260,13 @@ async function atualizarCamposDoBanco() {
         let { data: perguntas, error } = await supabaseClient
             .from('perguntas')
             .select(`
-                id, nome_campo, tipo_campo, texto_output_true, ordem_contexto_true, pesos_true,
+                id, nome_campo, tipo_campo, texto_output_true, ordem_contexto_true,
                 texto_output_numero, ordem_contexto_numero, ordem_exibicao,
-                opcoes_dropdown ( id, valor_opcao, texto_output, ordem_contexto, pesos )
+                vinculos_pesos ( peso, naturezas_copom ( nome ) ),
+                opcoes_dropdown ( 
+                    id, valor_opcao, texto_output, ordem_contexto,
+                    vinculos_pesos ( peso, naturezas_copom ( nome ) )
+                )
             `)
             .eq('categoria_id', categoriaId)
             .order('ordem_exibicao', { ascending: true });
@@ -161,18 +336,20 @@ function calcularProbabilidadesDoBanco() {
 
         if (campo.tipo_campo === "dropdown" && el.value) {
             const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
-            if (opt && opt.pesos) {
-                for (let [nat, peso] of Object.entries(opt.pesos)) {
-                    pontuacaoNaturezas[nat] = (pontuacaoNaturezas[nat] || 0) + peso;
-                }
+            if (opt && opt.vinculos_pesos) {
+                opt.vinculos_pesos.forEach(v => {
+                    const nomeNat = v.naturezas_copom?.nome;
+                    if (nomeNat) pontuacaoNaturezas[nomeNat] = (pontuacaoNaturezas[nomeNat] || 0) + v.peso;
+                });
             }
         }
 
         if (campo.tipo_campo === "bool" && el.checked) {
-            if (campo.pesos_true) {
-                for (let [nat, peso] of Object.entries(campo.pesos_true)) {
-                    pontuacaoNaturezas[nat] = (pontuacaoNaturezas[nat] || 0) + peso;
-                }
+            if (campo.vinculos_pesos) {
+                campo.vinculos_pesos.forEach(v => {
+                    const nomeNat = v.naturezas_copom?.nome;
+                    if (nomeNat) pontuacaoNaturezas[nomeNat] = (pontuacaoNaturezas[nomeNat] || 0) + v.peso;
+                });
             }
         }
     });
@@ -232,7 +409,6 @@ function gerarTextoDoBanco() {
         }
     });
 
-    // Ordenação garantindo que a hierarquia estrutural/gramatical das palavras seja respeitada
     fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
 
     const historicoCompilado = fragmentosFrase.map(f => f.texto).join(" ");

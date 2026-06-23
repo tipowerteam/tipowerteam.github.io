@@ -8,6 +8,7 @@
     --cor-botao-hover: #172554;
     --cor-sucesso: #10b981;
     --cor-perigo: #ef4444;
+    --bg-admin: #f8fafc;
 }
 
 body[data-theme="dark"] {
@@ -18,6 +19,7 @@ body[data-theme="dark"] {
     --borda: #334155;
     --cor-botao: #3b82f6;
     --cor-botao-hover: #2563eb;
+    --bg-admin: #1e293b;
 }
 
 .logo h1 {
@@ -77,6 +79,103 @@ button {
     top: 15px;
     right: 15px;
     z-index: 1000;
+}
+
+/* Botão do Menu Superior Esquerdo */
+#btnAdminToggle {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1000;
+    background-color: var(--texto-secundario);
+}
+
+/* Estrutura da Sidebar Administrativa */
+.sidebar-admin {
+    position: fixed;
+    top: 0;
+    left: -420px; /* Escondido por padrão */
+    width: 400px;
+    height: 100%;
+    background-color: var(--bg-principal);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    z-index: 1001;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--borda);
+}
+
+    .sidebar-admin.aberto {
+        left: 0; /* Desliza para dentro da tela */
+    }
+
+.sidebar-header {
+    padding: 15px;
+    background-color: var(--cor-botao);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+    .sidebar-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+.btn-fechar {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: white;
+    padding: 0;
+    cursor: pointer;
+}
+
+.sidebar-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Elementos do Painel de Vinculação */
+.secao-naturezas {
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: var(--bg-admin);
+}
+
+.input-peso-group {
+    display: flex;
+    gap: 10px;
+}
+
+    .input-peso-group input {
+        width: 40%;
+    }
+
+    .input-peso-group button {
+        width: 60%;
+        padding: 5px;
+        font-size: 0.85rem;
+    }
+
+#listaNaturezasVinculadas {
+    margin-top: 10px;
+    padding-left: 20px;
+    font-size: 0.9rem;
+}
+
+    #listaNaturezasVinculadas li {
+        margin-bottom: 5px;
+        color: var(--texto-secundario);
+    }
+
+.btn-principal {
+    background-color: var(--cor-botao);
 }
 
 .btn-secundario {
