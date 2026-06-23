@@ -81,7 +81,6 @@ button {
     z-index: 1000;
 }
 
-/* Botão do Menu Superior Esquerdo */
 #btnAdminToggle {
     position: fixed;
     top: 15px;
@@ -90,12 +89,12 @@ button {
     background-color: var(--texto-secundario);
 }
 
-/* Estrutura da Sidebar Administrativa */
+/* Sidebar Layout */
 .sidebar-admin {
     position: fixed;
     top: 0;
-    left: -420px; /* Escondido por padrão */
-    width: 400px;
+    left: -430px;
+    width: 410px;
     height: 100%;
     background-color: var(--bg-principal);
     box-shadow: 4px 0 15px rgba(0,0,0,0.3);
@@ -107,7 +106,7 @@ button {
 }
 
     .sidebar-admin.aberto {
-        left: 0; /* Desliza para dentro da tela */
+        left: 0;
     }
 
 .sidebar-header {
@@ -129,7 +128,6 @@ button {
     border: none;
     font-size: 1.5rem;
     color: white;
-    padding: 0;
     cursor: pointer;
 }
 
@@ -139,40 +137,77 @@ button {
     flex: 1;
 }
 
-/* Elementos do Painel de Vinculação */
 .secao-naturezas {
     border: 1px solid var(--borda);
     border-radius: 4px;
-    padding: 10px;
+    padding: 12px;
     margin-top: 10px;
     background-color: var(--bg-admin);
 }
 
-.input-peso-group {
+/* Autocomplete Custom Panel */
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.painel-sugestoes-busca {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-card);
+    border: 1px solid var(--borda);
+    max-height: 180px;
+    overflow-y: auto;
+    z-index: 1005;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    display: none;
+}
+
+.item-sugestao {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--borda);
+    font-size: 0.85rem;
+}
+
+    .item-sugestao:hover {
+        background-color: var(--cor-botao);
+        color: white;
+    }
+
+/* Tags das Naturezas Selecionadas */
+.tags-naturezas {
+    list-style: none;
+    padding: 0;
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
 }
 
-    .input-peso-group input {
-        width: 40%;
+    .tags-naturezas li {
+        background-color: var(--cor-botao);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 
-    .input-peso-group button {
-        width: 60%;
-        padding: 5px;
-        font-size: 0.85rem;
-    }
-
-#listaNaturezasVinculadas {
-    margin-top: 10px;
-    padding-left: 20px;
-    font-size: 0.9rem;
+.btn-remover-tag {
+    background: none;
+    border: none;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.85rem;
 }
-
-    #listaNaturezasVinculadas li {
-        margin-bottom: 5px;
-        color: var(--texto-secundario);
-    }
 
 .btn-principal {
     background-color: var(--cor-botao);

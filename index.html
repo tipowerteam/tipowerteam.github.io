@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <button id="btnAdminToggle" onclick="alternarPainelAdmin()">Painel do Registrador</button>
+    <button id="btnAdminToggle" onclick="alternarPainelAdmin()">⚙️ Painel do Registrador</button>
 
     <div id="painelAdmin" class="sidebar-admin">
         <div class="sidebar-header">
@@ -17,53 +17,61 @@
         </div>
 
         <div class="sidebar-body">
-            <label for="regAtendente">Quem está registrando?</label>
-            <input type="text" id="regAtendente" placeholder="Nome ou Prefixo">
+            <label for="regAtendente">Colaborador:</label>
+            <input type="text" id="regAtendente" placeholder="Seu nome ou prefixo">
 
-            <label for="regNomeCampo">Nome do Campo / Pergunta</label>
+            <label for="regCategoria">Categoria:</label>
+            <select id="regCategoria" onchange="atualizarDropdownsExistentesDaCategoria()">
+                <option value="">Selecione uma categoria base...</option>
+            </select>
+
+            <label for="regNomeCampo">Título/Opção:</label>
             <input type="text" id="regNomeCampo" placeholder="Ex: Arma Utilizada ou Vítima Ferida?">
 
-            <label for="regTipoCampo">Tipo do Campo</label>
+            <label for="regTipoCampo">Tipo de Registro:</label>
             <select id="regTipoCampo" onchange="alternarCamposRegistro()">
-                <option value="bool">Sim/Não (Checkbox/Toggle)</option>
-                <option value="dropdown">Opção Selecionável (Dropdown)</option>
-                <option value="numero">Numeral (Quantidade)</option>
+                <option value="bool">Toggle / Boolean (Sim/Não)</option>
+                <option value="numero">Numeral Only (Apenas Números)</option>
+                <option value="texto">Campo de Texto Personalizado (Inputfield)</option>
+                <option value="dropdown_novo">Dropdown (Criar um Novo)</option>
+                <option value="dropdown_existente">Dropdown (Adicionar opção a um Existente)</option>
             </select>
 
-            <div id="areaDropdownConfig" style="display: none;">
-                <label for="regValorOpcao">Valor Selecionável da Opção</label>
-                <input type="text" id="regValorOpcao" placeholder="Ex: Faca / Revólver">
+            <div id="areaDropdownExistenteConfig" style="display: none;">
+                <label for="regDropdownMae">Selecione o Dropdown Alvo:</label>
+                <select id="regDropdownMae">
+                    <option value="">Escolha o grupo...</option>
+                </select>
+
+                <label for="regValorOpcao">Valor Selecionável da Opção:</label>
+                <input type="text" id="regValorOpcao" placeholder="Ex: Faca, Revólver, Parcial">
             </div>
 
-            <label for="regTextoOutput">Texto Gerado no Output (Frase)</label>
+            <div id="areaDropdownNovoConfig" style="display: none;">
+                <label for="regValorOpcaoNovo">Primeiro Valor Selecionável deste Dropdown:</label>
+                <input type="text" id="regValorOpcaoNovo" placeholder="Ex: Sim, Não, Desconhecido">
+            </div>
+
+            <label for="regTextoOutput">Descrição (Texto a ser gerado no Output):</label>
             <input type="text" id="regTextoOutput" placeholder="Ex: com o emprego de arma branca,">
 
-            <label for="regOrdem">Prioridade do Texto (Ordem de Exibição)</label>
-            <select id="regOrdem">
-                <option value="10">Começo do Histórico (10)</option>
-                <option value="20">Meio do Histórico - Detalhes Iniciais (20)</option>
-                <option value="30">Meio do Histórico - Meios Empregados (30)</option>
-                <option value="40">Fim do Histórico - Estado do Local (40)</option>
-                <option value="50">Fim do Histórico - Fuga/Rumo (50)</option>
-            </select>
+            <label for="regOrdem">Prioridade (Número Inteiro):</label>
+            <input type="number" id="regOrdem" value="10" placeholder="Ex: 10 (Início), 50 (Fim)">
 
             <fieldset class="secao-naturezas">
-                <legend>Vincular Naturezas do COPOM</legend>
+                <legend>Naturezas Possíveis (Vincular)</legend>
 
-                <label for="buscaNatureza">Pesquise a Natureza (Autocomplete):</label>
-                <input type="text" id="buscaNatureza" list="listaNaturezasCopom" placeholder="Comece a digitar a natureza...">
-                <datalist id="listaNaturezasCopom"></datalist>
-
-                <label for="regPeso">Peso / Porcentagem para esta Natureza (0 a 100):</label>
-                <div class="input-peso-group">
-                    <input type="number" id="regPeso" value="50" min="0" max="100">
-                    <button type="button" onclick="adicionarNaturezaNaLista()">Adicionar Vínculo</button>
+                <label for="buscaNatureza">Comece a digitar o nome da Natureza:</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="buscaNatureza" oninput="filtrarNaturezasAutocomplete(this.value)" placeholder="Ex: VIO...">
+                    <div id="painelSugestoesInstantes" class="painel-sugestoes-busca"></div>
                 </div>
 
-                <ul id="listaNaturezasVinculadas"></ul>
+                <label>Naturezas Vinculadas a esta Opção:</label>
+                <ul id="listaNaturezasVinculadas" class="tags-naturezas"></ul>
             </fieldset>
 
-            <button onclick="salvarNovoRegistroCompleto()" class="btn-principal" style="width: 100%; margin-top: 15px;">Registrar no Banco</button>
+            <button onclick="salvarNovoRegistroCompleto()" class="btn-principal" style="width: 100%; margin-top: 15px;">Registrar no Banco de dados</button>
         </div>
     </div>
 
