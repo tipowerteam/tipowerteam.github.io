@@ -19,8 +19,17 @@ window.onload = async () => {
     await carregarCategoriasDoBanco();
     await baixarEGuardarTodasAsNaturezas();
 
-    document.getElementById("natureza").addEventListener("change", atualizarCamposDoBanco);
-    document.getElementById("descricao").addEventListener("input", atualizarTudo);
+    // Tratamento do Dropdown Principal para apagar a opção "Selecione..." ao mudar
+    const selectNatureza = document.getElementById("natureza");
+    selectNatureza.addEventListener("change", (e) => {
+        if (e.target.value !== "") {
+            const primeiraOpcao = e.target.options[0];
+            if (primeiraOpcao && primeiraOpcao.value === "") {
+                primeiraOpcao.remove();
+            }
+        }
+        atualizarCamposDoBanco();
+    });
 };
 
 let timeout;
@@ -265,7 +274,8 @@ async function salvarNovoRegistroCompleto() {
 
 async function carregarCategoriasDoBanco() {
     try {
-        let { data, error } = await supabaseClient.from('categorias').select('*').order('nome', { ascending: true });
+        // Modificado de 'nome' para 'id' para respeitar a ordenação sequencial do banco de dados
+        let { data, error } = await supabaseClient.from('categorias').select('*').order('id', { ascending: true });
         if (error) throw error;
         dadosNaturezas = data || [];
 
@@ -333,13 +343,11 @@ async function atualizarCamposDoBanco() {
             }
 
             const divGroup = document.createElement("div");
-
-            // CORREÇÃO DE ACESSIBILIDADE: Gerar ID primeiro e passá-lo para o label.htmlFor
             const id = gerarId(campo.nome_campo);
 
             const label = document.createElement("label");
             label.textContent = campo.nome_campo;
-            label.htmlFor = id; // Vincula explicitamente
+            label.htmlFor = id;
             divGroup.appendChild(label);
 
             if (campo.tipo_campo === "dropdown") {
@@ -354,7 +362,17 @@ async function atualizarCamposDoBanco() {
                         select.appendChild(option);
                     });
                 }
-                select.addEventListener("change", atualizarTudo);
+
+                // Listener remove o texto "Selecione..." assim que uma opção real é clicada
+                select.addEventListener("change", (e) => {
+                    if (e.target.value !== "") {
+                        const primeiraOpcao = e.target.options[0];
+                        if (primeiraOpcao && primeiraOpcao.value === "") {
+                            primeiraOpcao.remove();
+                        }
+                    }
+                    atualizarTudo();
+                });
                 divGroup.appendChild(select);
             }
 
@@ -485,12 +503,11 @@ function gerarTextoDoBanco() {
 
     fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
     const historicoCompilado = fragmentosFrase.map(f => f.texto).join(" ");
-    const compl = document.getElementById("descricao").value;
 
+    // Sem área de descrição dedicada, removendo variáveis e preservando a reescrita limpa
     let textoFinal = `=== REGISTRO DE OCORRÊNCIA COPOM ===\n`;
     textoFinal += `CATEGORIA: ${categoriaTexto}\n`;
     textoFinal += `HISTÓRICO COMPILADO: ${historicoCompilado.trim()}\n`;
-    if (compl) textoFinal += `INFO COMPLEMENTAR: ${compl}\n`;
     textoFinal += `====================================\n`;
     textoFinal += `TA EM FAZE DE TESTE GENTE CALMA`;
 
@@ -500,17 +517,28 @@ function gerarTextoDoBanco() {
 function copiarTexto() {
     const resultado = document.getElementById("resultado");
     if (!resultado || !resultado.value) return;
+
     navigator.clipboard.writeText(resultado.value);
-    alert("Copiado para a área de transferência!");
+
+    // Alertas de janela removidos. Dispara uma animação discreta via Toast CSS
+    const toast = document.getElementById("toastCopia");
+    if (toast) {
+        toast.classList.add("visivel");
+        setTimeout(() => {
+            toast.classList.remove("visivel");
+        }, 2000);
+    }
 }
 
-function limparPagina() {
-    document.getElementById("natureza").value = "";
-    document.getElementById("descricao").value = "";
+async function limparPagina() {
+    // Reseta o estado completo remontando o dropdown com as opções iniciais limpas
     document.getElementById("resultado").value = "";
     document.getElementById("camposDinamicos").innerHTML = "";
     document.getElementById("painelSugestoes").style.display = "none";
     perguntasDaCategoriaAtual = [];
+
+    // Restaura o dropdown inicial completo recarregando as categorias na ordem correta
+    await carregarCategoriasDoBanco();
 }
 
 function gerarId(texto) {

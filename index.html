@@ -5,6 +5,28 @@
     <title>SAOC</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        /* Estilo rápido para a notificação discreta no rodapé */
+        .toast-copia {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+            .toast-copia.visivel {
+                opacity: 1;
+            }
+    </style>
 </head>
 <body>
 
@@ -89,11 +111,8 @@
 
     <div id="camposDinamicos"></div>
 
-    <label for="descricao">Informações Complementares (Manual)</label>
-    <textarea id="descricao" placeholder="Digite informações adicionais."></textarea>
-
     <h2>Resultado do Despacho</h2>
-    <textarea id="resultado" readonly></textarea>
+    <textarea id="resultado" placeholder="O resultado do despacho aparecerá aqui..."></textarea>
 
     <div class="botoes-acoes">
         <button onclick="copiarTexto()" class="btn-secundario">Copiar Output</button>
@@ -104,6 +123,8 @@
         <h3>Possíveis Naturezas Sugeridas:</h3>
         <ul id="listaSugestoes"></ul>
     </div>
+
+    <div id="toastCopia" class="toast-copia">Texto copiado com sucesso!</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
