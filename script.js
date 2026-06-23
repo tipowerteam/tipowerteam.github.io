@@ -6,7 +6,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let dadosNaturezas = [];
 let perguntasDaCategoriaAtual = [];
-let listaMapeadaNaturezasCopom = []; // Cache local para busca instantânea e autocomplete
+let listaMapeadaNaturezasCopom = []; // Cache local para autocomplete instantâneo
 let naturezasVinculadasNoPainel = []; // IDs selecionados no painel admin
 
 window.onload = async () => {
@@ -56,41 +56,46 @@ function alternarCamposRegistro() {
     document.getElementById("areaDropdownNovoConfig").style.display = tipo === 'dropdown_novo' ? 'block' : 'none';
 }
 
-// BAIXA TODAS AS NATUREZAS DO COPOM PARA O AUTOCOMPLETE INTELIGENTE LOCAL
+// BUSCA TODAS AS NATUREZAS DO BANCO PARA O AUTOCOMPLETE FUNCIONAR LOCALMENTE
 async function baixarEGuardarTodasAsNaturezas() {
     try {
         let { data, error } = await supabaseClient
             .from('naturezas_copom')
-            .select('id, nome')
-            .order('nome', { ascending: true });
+            .select('id, nome');
 
         if (error) throw error;
         listaMapeadaNaturezasCopom = data || [];
     } catch (err) {
-        console.error("Verifique as Políticas RLS da tabela naturezas_copom no Supabase:", err);
+        console.error("Erro ao carregar naturezas para autocomplete:", err);
     }
 }
 
-// FILTRAGEM INTELIGENTE DINÂMICA (Aparece ao digitar 'VIO' por exemplo)
+// AUTOCOMPLETE INTELIGENTE FIXADO (Filtragem dinâmica por texto na digitação)
 function filtrarNaturezasAutocomplete(termoBusca) {
     const painel = document.getElementById("painelSugestoesInstantes");
-    if (!termoBusca || termoBusca.trim().length < 2) {
+    if (!termoBusca || termoBusca.trim().length < 1) {
         painel.style.display = "none";
         return;
     }
 
     const termoLimpo = termoBusca.toUpperCase();
-    const filtradas = listaMapeadaNaturezasCopom.filter(nat => nat.nome.toUpperCase().includes(termoLimpo));
+    const filtradas = listaMapeadaNaturezasCopom.filter(nat =>
+        nat.nome && nat.nome.toUpperCase().includes(termoLimpo)
+    );
 
+    painel.innerHTML = "";
     if (filtradas.length === 0) {
-        painel.innerHTML = '<div class="item-sugestao">Nenhuma correspondência encontrada</div>';
+        painel.innerHTML = '<div class="item-sugestao">Nenhuma correspondência...</div>';
     } else {
-        painel.innerHTML = "";
-        filtradas.slice(0, 15).forEach(nat => { // Exibe até 15 sugestões para performance
+        filtradas.slice(0, 10).forEach(nat => {
             const div = document.createElement("div");
             div.className = "item-sugestao";
             div.textContent = nat.nome;
-            div.onclick = () => vincularNaturezaAdmin(nat.id, nat.nome);
+            div.style.padding = "8px";
+            div.style.cursor = "pointer";
+            div.onclick = () => {
+                vincularNaturezaAdmin(nat.id, nat.nome);
+            };
             painel.appendChild(div);
         });
     }
@@ -125,7 +130,6 @@ function renderizarTagsNaturezas() {
     });
 }
 
-// PREENCHE OS DROP-DOWNS DO PAINEL ADMINISTRATIVO COM BASE NA CATEGORIA SELECIONADA
 async function atualizarDropdownsExistentesDaCategoria() {
     const catId = document.getElementById("regCategoria").value;
     const selectDropdownsMap = document.getElementById("regDropdownMae");
@@ -152,7 +156,7 @@ async function atualizarDropdownsExistentesDaCategoria() {
     } catch (e) { console.error(e); }
 }
 
-// GRAVA DE FORMA INTELIGENTE, METADADOS DE QUEM CRIOU E ASSOCIAÇÕES MULTIPLAS
+// SALVA AGORA GRAVANDO QUEM REGISTROU TANTO EM PERGUNTAS QUANTO OPCOES_DROPDOWN
 async function salvarNovoRegistroCompleto() {
     const colaborador = document.getElementById("regAtendente").value.trim();
     const categoriaId = document.getElementById("regCategoria").value;
@@ -161,36 +165,36 @@ async function salvarNovoRegistroCompleto() {
     const textoOutput = document.getElementById("regTextoOutput").value.trim();
     const ordem = parseInt(document.getElementById("regOrdem").value) || 10;
 
-    if (!colaborador || !categoriaId || !nomeCampo || !textoOutput) {
-        alert("Preencha todos os campos obrigatórios e selecione a categoria.");
+    if (!colaborador) {
+        alert("Por favor, preencha quem é o Colaborador para fins de auditoria.");
+        return;
+    }
+    if (!categoriaId || !nomeCampo || !textoOutput) {
+        alert("Preencha todos os campos da opção!");
         return;
     }
     if (naturezasVinculadasNoPainel.length === 0) {
-        alert("Vincule ao menos uma natureza possível através do campo de busca inteligente!");
+        alert("Vincule ao menos uma natureza usando o campo de busca!");
         return;
     }
 
     try {
-        // Objeto de auditoria para saber quem registrou e o que registrou
-        const auditoriaMetadata = `Criado por: ${colaborador} em ${new Date().toLocaleDateString()}`;
-
         if (tipoCampo === 'bool' || tipoCampo === 'numero' || tipoCampo === 'texto') {
             const { data: novaPerg, error: err } = await supabaseClient
                 .from('perguntas')
                 .insert([{
                     categoria_id: categoriaId,
                     nome_campo: nomeCampo,
-                    tipo_campo: tipoCampo === 'texto' ? 'texto' : tipoCampo,
+                    tipo_campo: tipoCampo,
                     texto_output_true: tipoCampo === 'bool' ? textoOutput : null,
                     ordem_contexto_true: tipoCampo === 'bool' ? ordem : null,
                     texto_output_numero: tipoCampo === 'numero' ? textoOutput : null,
                     ordem_contexto_numero: tipoCampo === 'numero' ? ordem : null,
-                    registrado_por: auditoriaMetadata // Campo de rastreamento no banco
+                    registrado_por: colaborador // Salvando quem registrou a pergunta
                 }]).select();
 
             if (err) throw err;
 
-            // Insere os vínculos associativos (Sem pesos numéricos fixos manuais)
             for (const nId of naturezasVinculadasNoPainel) {
                 await supabaseClient.from('vinculos_pesos').insert([{ pergunta_id: novaPerg[0].id, natureza_id: nId }]);
             }
@@ -199,13 +203,24 @@ async function salvarNovoRegistroCompleto() {
             const valorInicial = document.getElementById("regValorOpcaoNovo").value.trim() || "Padrão";
             const { data: novaPerg, error: err } = await supabaseClient
                 .from('perguntas')
-                .insert([{ categoria_id: categoriaId, nome_campo: nomeCampo, tipo_campo: 'dropdown', registrado_por: auditoriaMetadata }]).select();
+                .insert([{
+                    categoria_id: categoriaId,
+                    nome_campo: nomeCampo,
+                    tipo_campo: 'dropdown',
+                    registrado_por: colaborador // Quem criou o cabeçalho do dropdown
+                }]).select();
 
             if (err) throw err;
 
             const { data: novaOpt } = await supabaseClient
                 .from('opcoes_dropdown')
-                .insert([{ pergunta_id: novaPerg[0].id, valor_opcao: valorInicial, texto_output: textoOutput, ordem_contexto: ordem }]).select();
+                .insert([{
+                    pergunta_id: novaPerg[0].id,
+                    valor_opcao: valorInicial,
+                    texto_output: textoOutput,
+                    ordem_contexto: ordem,
+                    registrado_por: colaborador // Quem criou essa sub-opção
+                }]).select();
 
             for (const nId of naturezasVinculadasNoPainel) {
                 await supabaseClient.from('vinculos_pesos').insert([{ opcao_dropdown_id: novaOpt[0].id, natureza_id: nId }]);
@@ -216,13 +231,19 @@ async function salvarNovoRegistroCompleto() {
             const valorSubOpcao = document.getElementById("regValorOpcao").value.trim();
 
             if (!perguntaIdMae || !valorSubOpcao) {
-                alert("Selecione o dropdown existente e digite o valor da opção.");
+                alert("Selecione o dropdown e defina o valor da opção!");
                 return;
             }
 
             const { data: novaOpt, error: err } = await supabaseClient
                 .from('opcoes_dropdown')
-                .insert([{ pergunta_id: perguntaIdMae, valor_opcao: valorSubOpcao, texto_output: textoOutput, ordem_contexto: ordem }]).select();
+                .insert([{
+                    pergunta_id: perguntaIdMae,
+                    valor_opcao: valorSubOpcao,
+                    texto_output: textoOutput,
+                    ordem_contexto: ordem,
+                    registrado_por: colaborador // Quem injetou a nova opção no grupo existente
+                }]).select();
 
             if (err) throw err;
 
@@ -231,9 +252,7 @@ async function salvarNovoRegistroCompleto() {
             }
         }
 
-        alert(`Sucesso! Registro catalogado sob responsabilidade de: ${colaborador}`);
-
-        // Reset Admin form
+        alert(`Sucesso! Opção catalogada por ${colaborador}`);
         document.getElementById("regNomeCampo").value = "";
         document.getElementById("regTextoOutput").value = "";
         naturezasVinculadasNoPainel = [];
@@ -243,11 +262,10 @@ async function salvarNovoRegistroCompleto() {
 
     } catch (e) {
         console.error(e);
-        alert("Erro ao sincronizar dados relacionais com o Supabase.");
+        alert("Erro ao gravar dados no Supabase.");
     }
 }
 
-// LÓGICAS DO ATENDENTE E CÁLCULO PROPORCIONAL SEM PESOS MANUAIS (Puro/Frequência)
 async function carregarCategoriasDoBanco() {
     try {
         let { data, error } = await supabaseClient.from('categorias').select('*').order('nome', { ascending: true });
@@ -270,6 +288,7 @@ async function carregarCategoriasDoBanco() {
     } catch (erro) { console.error(erro); }
 }
 
+// CORREÇÃO DOS CAMPOS SUMIDOS: Consultas isoladas garantem que se 'vinculos_pesos' estiver limpo, as perguntas continuam renderizando na tela normalmente
 async function atualizarCamposDoBanco() {
     const categoriaId = document.getElementById("natureza").value;
     const container = document.getElementById("camposDinamicos");
@@ -283,24 +302,45 @@ async function atualizarCamposDoBanco() {
     }
 
     try {
-        let { data: perguntas, error } = await supabaseClient
+        // Passo 1: Busca as perguntas associadas à categoria
+        let { data: perguntas, error: errP } = await supabaseClient
             .from('perguntas')
-            .select(`
-                id, nome_campo, tipo_campo, texto_output_true, ordem_contexto_true,
-                texto_output_numero, ordem_contexto_numero, ordem_exibicao,
-                vinculos_pesos ( naturezas_copom ( nome ) ),
-                opcoes_dropdown ( 
-                    id, valor_opcao, texto_output, ordem_contexto,
-                    vinculos_pesos ( naturezas_copom ( nome ) )
-                )
-            `)
+            .select('*')
             .eq('categoria_id', categoriaId)
-            .order('ordem_exibicao', { ascending: true });
+            .order('id', { ascending: true });
 
-        if (error) throw error;
+        if (errP) throw errP;
         perguntasDaCategoriaAtual = perguntas || [];
 
-        perguntasDaCategoriaAtual.forEach(campo => {
+        for (let campo of perguntasDaCategoriaAtual) {
+            // Carrega as sub-opções se o campo for um dropdown
+            if (campo.tipo_campo === "dropdown") {
+                let { data: opcoes } = await supabaseClient
+                    .from('opcoes_dropdown')
+                    .select('*')
+                    .eq('pergunta_id', campo.id);
+                campo.opcoes_dropdown = opcoes || [];
+            }
+
+            // Carrega os vínculos de sugestão/pesos de forma isolada
+            let { data: vPesos } = await supabaseClient
+                .from('vinculos_pesos')
+                .select('natureza_id, naturezas_copom(nome)')
+                .eq('pergunta_id', campo.id);
+            campo.vinculos_pesos = vPesos || [];
+
+            // Se o campo for dropdown, busca vínculos de suas opções
+            if (campo.opcoes_dropdown) {
+                for (let opt of campo.opcoes_dropdown) {
+                    let { data: vOptPesos } = await supabaseClient
+                        .from('vinculos_pesos')
+                        .select('natureza_id, naturezas_copom(nome)')
+                        .eq('opcao_dropdown_id', opt.id);
+                    opt.vinculos_pesos = vOptPesos || [];
+                }
+            }
+
+            // Renderização no HTML
             const divGroup = document.createElement("div");
             const label = document.createElement("label");
             label.textContent = campo.nome_campo;
@@ -344,11 +384,13 @@ async function atualizarCamposDoBanco() {
             }
 
             container.appendChild(divGroup);
-        });
-    } catch (erro) { console.error(erro); }
+        }
+    } catch (erro) {
+        console.error("Erro ao estruturar campos dinâmicos:", erro);
+    }
 }
 
-// CÁLCULO DE PROPORÇÃO MATEMÁTICA PURA (Baseado na frequência de ligações ativas)
+// CÁLCULO PROPORCIONAL COM BASE NAS FREQUÊNCIAS ENCONTRADAS
 function calcularProbabilidadesDoBanco() {
     if (!perguntasDaCategoriaAtual.length) return;
 
@@ -363,7 +405,7 @@ function calcularProbabilidadesDoBanco() {
             const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
             if (opt && opt.vinculos_pesos) {
                 opt.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom?.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
+                    if (v.naturezas_copom && v.naturezas_copom.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
                 });
             }
         }
@@ -371,7 +413,7 @@ function calcularProbabilidadesDoBanco() {
         if (campo.tipo_campo === "bool" && el.checked) {
             if (campo.vinculos_pesos) {
                 campo.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom?.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
+                    if (v.naturezas_copom && v.naturezas_copom.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
                 });
             }
         }
@@ -379,7 +421,7 @@ function calcularProbabilidadesDoBanco() {
         if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value.trim() !== "") {
             if (campo.vinculos_pesos) {
                 campo.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom?.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
+                    if (v.naturezas_copom && v.naturezas_copom.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
                 });
             }
         }
@@ -392,7 +434,6 @@ function calcularProbabilidadesDoBanco() {
     const totalDeVotosAtivos = arrayVotosNaturezas.length;
 
     if (totalDeVotosAtivos > 0) {
-        // Conta as ocorrências de cada string de natureza
         let contagemFrequencia = {};
         arrayVotosNaturezas.forEach(nome => {
             contagemFrequencia[nome] = (contagemFrequencia[nome] || 0) + 1;
@@ -405,7 +446,7 @@ function calcularProbabilidadesDoBanco() {
         ordenadoPorProporcao.forEach(([nomeNat, quantidade]) => {
             const li = document.createElement("li");
             const proporcaoCalculada = Math.round((quantidade / totalDeVotosAtivos) * 100);
-            li.innerHTML = `<strong>${nomeNat}</strong> - (${proporcaoCalculada}% de compatibilidade baseada nas opções)`;
+            li.innerHTML = `<strong>${nomeNat}</strong> - (${proporcaoCalculada}% de probabilidade)`;
             lista.appendChild(li);
         });
     } else {
@@ -429,13 +470,13 @@ function gerarTextoDoBanco() {
         if (campo.tipo_campo === "dropdown" && el.value) {
             const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
             if (opt && opt.texto_output) {
-                fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto });
+                fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto || 10 });
             }
         }
 
         if (campo.tipo_campo === "bool" && el.checked) {
             if (campo.texto_output_true) {
-                fragmentosFrase.push({ texto: campo.texto_output_true, ordem: campo.ordem_contexto_true });
+                fragmentosFrase.push({ texto: campo.texto_output_true, ordem: campo.ordem_contexto_true || 10 });
             }
         }
 

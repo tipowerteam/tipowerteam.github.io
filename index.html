@@ -18,7 +18,7 @@
 
         <div class="sidebar-body">
             <label for="regAtendente">Colaborador:</label>
-            <input type="text" id="regAtendente" placeholder="Seu nome ou prefixo">
+            <input type="text" id="regAtendente" placeholder="Nome do colaborador (Ex: Sgt. Ramos)">
 
             <label for="regCategoria">Categoria:</label>
             <select id="regCategoria" onchange="atualizarDropdownsExistentesDaCategoria()">
@@ -63,11 +63,11 @@
 
                 <label for="buscaNatureza">Comece a digitar o nome da Natureza:</label>
                 <div class="autocomplete-container">
-                    <input type="text" id="buscaNatureza" oninput="filtrarNaturezasAutocomplete(this.value)" placeholder="Ex: VIO...">
+                    <input type="text" id="buscaNatureza" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Ex: VIO...">
                     <div id="painelSugestoesInstantes" class="painel-sugestoes-busca"></div>
                 </div>
 
-                <label>Naturezas Vinculadas a esta Opção:</label>
+                <label style="margin-top: 10px; display: block;">Naturezas Vinculadas a esta Opção:</label>
                 <ul id="listaNaturezasVinculadas" class="tags-naturezas"></ul>
             </fieldset>
 
