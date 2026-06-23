@@ -56,12 +56,12 @@ function alternarCamposRegistro() {
     document.getElementById("areaDropdownNovoConfig").style.display = tipo === 'dropdown_novo' ? 'block' : 'none';
 }
 
-// BUSCA TODAS AS NATUREZAS DO BANCO PARA O AUTOCOMPLETE FUNCIONAR LOCALMENTE
+// CORRIGIDO: Agora busca a coluna real 'natureza' em vez de 'nome'
 async function baixarEGuardarTodasAsNaturezas() {
     try {
         let { data, error } = await supabaseClient
             .from('naturezas_copom')
-            .select('id, nome');
+            .select('id, natureza'); // Alterado de 'id, nome' para 'id, natureza'
 
         if (error) throw error;
         listaMapeadaNaturezasCopom = data || [];
@@ -70,7 +70,7 @@ async function baixarEGuardarTodasAsNaturezas() {
     }
 }
 
-// AUTOCOMPLETE INTELIGENTE FIXADO (Filtragem dinâmica por texto na digitação)
+// CORRIGIDO: Atualizado para filtrar e ler pela propriedade .natureza
 function filtrarNaturezasAutocomplete(termoBusca) {
     const painel = document.getElementById("painelSugestoesInstantes");
     if (!termoBusca || termoBusca.trim().length < 1) {
@@ -80,7 +80,7 @@ function filtrarNaturezasAutocomplete(termoBusca) {
 
     const termoLimpo = termoBusca.toUpperCase();
     const filtradas = listaMapeadaNaturezasCopom.filter(nat =>
-        nat.nome && nat.nome.toUpperCase().includes(termoLimpo)
+        nat.natureza && nat.natureza.toUpperCase().includes(termoLimpo) // Alterado para .natureza
     );
 
     painel.innerHTML = "";
@@ -90,11 +90,11 @@ function filtrarNaturezasAutocomplete(termoBusca) {
         filtradas.slice(0, 10).forEach(nat => {
             const div = document.createElement("div");
             div.className = "item-sugestao";
-            div.textContent = nat.nome;
+            div.textContent = nat.natureza; // Alterado para .natureza
             div.style.padding = "8px";
             div.style.cursor = "pointer";
             div.onclick = () => {
-                vincularNaturezaAdmin(nat.id, nat.nome);
+                vincularNaturezaAdmin(nat.id, nat.natureza); // Alterado para .natureza
             };
             painel.appendChild(div);
         });
@@ -117,6 +117,7 @@ function removerNaturezaAdmin(id) {
     renderizarTagsNaturezas();
 }
 
+// CORRIGIDO: Renderiza as tags usando o campo .natureza recuperado da lista
 function renderizarTagsNaturezas() {
     const ul = document.getElementById("listaNaturezasVinculadas");
     ul.innerHTML = "";
@@ -124,7 +125,7 @@ function renderizarTagsNaturezas() {
         const natObj = listaMapeadaNaturezasCopom.find(n => n.id === id);
         if (natObj) {
             const li = document.createElement("li");
-            li.innerHTML = `${natObj.nome} <button class="btn-remover-tag" onclick="removerNaturezaAdmin(${id})">&times;</button>`;
+            li.innerHTML = `${natObj.natureza} <button class="btn-remover-tag" onclick="removerNaturezaAdmin(${id})">&times;</button>`; // Alterado para natObj.natureza
             ul.appendChild(li);
         }
     });
@@ -156,7 +157,6 @@ async function atualizarDropdownsExistentesDaCategoria() {
     } catch (e) { console.error(e); }
 }
 
-// SALVA AGORA GRAVANDO QUEM REGISTROU TANTO EM PERGUNTAS QUANTO OPCOES_DROPDOWN
 async function salvarNovoRegistroCompleto() {
     const colaborador = document.getElementById("regAtendente").value.trim();
     const categoriaId = document.getElementById("regCategoria").value;
@@ -190,7 +190,7 @@ async function salvarNovoRegistroCompleto() {
                     ordem_contexto_true: tipoCampo === 'bool' ? ordem : null,
                     texto_output_numero: tipoCampo === 'numero' ? textoOutput : null,
                     ordem_contexto_numero: tipoCampo === 'numero' ? ordem : null,
-                    registrado_por: colaborador // Salvando quem registrou a pergunta
+                    registrado_por: colaborador
                 }]).select();
 
             if (err) throw err;
@@ -207,7 +207,7 @@ async function salvarNovoRegistroCompleto() {
                     categoria_id: categoriaId,
                     nome_campo: nomeCampo,
                     tipo_campo: 'dropdown',
-                    registrado_por: colaborador // Quem criou o cabeçalho do dropdown
+                    registrado_por: colaborador
                 }]).select();
 
             if (err) throw err;
@@ -219,7 +219,7 @@ async function salvarNovoRegistroCompleto() {
                     valor_opcao: valorInicial,
                     texto_output: textoOutput,
                     ordem_contexto: ordem,
-                    registrado_por: colaborador // Quem criou essa sub-opção
+                    registrado_por: colaborador
                 }]).select();
 
             for (const nId of naturezasVinculadasNoPainel) {
@@ -242,7 +242,7 @@ async function salvarNovoRegistroCompleto() {
                     valor_opcao: valorSubOpcao,
                     texto_output: textoOutput,
                     ordem_contexto: ordem,
-                    registrado_por: colaborador // Quem injetou a nova opção no grupo existente
+                    registrado_por: colaborador
                 }]).select();
 
             if (err) throw err;
@@ -288,7 +288,7 @@ async function carregarCategoriasDoBanco() {
     } catch (erro) { console.error(erro); }
 }
 
-// CORREÇÃO DOS CAMPOS SUMIDOS: Consultas isoladas garantem que se 'vinculos_pesos' estiver limpo, as perguntas continuam renderizando na tela normalmente
+// OBSERVAÇÃO: Se sua tabela 'vinculos_pesos' fizer join com 'naturezas_copom', certifique-se de referenciar 'natureza' também se necessário
 async function atualizarCamposDoBanco() {
     const categoriaId = document.getElementById("natureza").value;
     const container = document.getElementById("camposDinamicos");
@@ -302,7 +302,6 @@ async function atualizarCamposDoBanco() {
     }
 
     try {
-        // Passo 1: Busca as perguntas associadas à categoria
         let { data: perguntas, error: errP } = await supabaseClient
             .from('perguntas')
             .select('*')
@@ -313,7 +312,6 @@ async function atualizarCamposDoBanco() {
         perguntasDaCategoriaAtual = perguntas || [];
 
         for (let campo of perguntasDaCategoriaAtual) {
-            // Carrega as sub-opções se o campo for um dropdown
             if (campo.tipo_campo === "dropdown") {
                 let { data: opcoes } = await supabaseClient
                     .from('opcoes_dropdown')
@@ -322,25 +320,23 @@ async function atualizarCamposDoBanco() {
                 campo.opcoes_dropdown = opcoes || [];
             }
 
-            // Carrega os vínculos de sugestão/pesos de forma isolada
+            // CORRIGIDO INTERNAMENTE NO JOIN (se você usar o nome de exibição em algum lugar):
             let { data: vPesos } = await supabaseClient
                 .from('vinculos_pesos')
-                .select('natureza_id, naturezas_copom(nome)')
+                .select('natureza_id, naturezas_copom(natureza)') // Modificado sub-select de 'nome' para 'natureza'
                 .eq('pergunta_id', campo.id);
             campo.vinculos_pesos = vPesos || [];
 
-            // Se o campo for dropdown, busca vínculos de suas opções
             if (campo.opcoes_dropdown) {
                 for (let opt of campo.opcoes_dropdown) {
                     let { data: vOptPesos } = await supabaseClient
                         .from('vinculos_pesos')
-                        .select('natureza_id, naturezas_copom(nome)')
+                        .select('natureza_id, naturezas_copom(natureza)') // Modificado sub-select de 'nome' para 'natureza'
                         .eq('opcao_dropdown_id', opt.id);
                     opt.vinculos_pesos = vOptPesos || [];
                 }
             }
 
-            // Renderização no HTML
             const divGroup = document.createElement("div");
             const label = document.createElement("label");
             label.textContent = campo.nome_campo;
@@ -390,7 +386,6 @@ async function atualizarCamposDoBanco() {
     }
 }
 
-// CÁLCULO PROPORCIONAL COM BASE NAS FREQUÊNCIAS ENCONTRADAS
 function calcularProbabilidadesDoBanco() {
     if (!perguntasDaCategoriaAtual.length) return;
 
@@ -405,7 +400,8 @@ function calcularProbabilidadesDoBanco() {
             const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
             if (opt && opt.vinculos_pesos) {
                 opt.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom && v.naturezas_copom.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
+                    // Mapeado de v.naturezas_copom.nome para v.naturezas_copom.natureza
+                    if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
                 });
             }
         }
@@ -413,7 +409,8 @@ function calcularProbabilidadesDoBanco() {
         if (campo.tipo_campo === "bool" && el.checked) {
             if (campo.vinculos_pesos) {
                 campo.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom && v.naturezas_copom.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
+                    // Mapeado de v.naturezas_copom.nome para v.naturezas_copom.natureza
+                    if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
                 });
             }
         }
@@ -421,7 +418,8 @@ function calcularProbabilidadesDoBanco() {
         if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value.trim() !== "") {
             if (campo.vinculos_pesos) {
                 campo.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom && v.naturezas_copom.nome) arrayVotosNaturezas.push(v.naturezas_copom.nome);
+                    // Mapeado de v.naturezas_copom.nome para v.naturezas_copom.natureza
+                    if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
                 });
             }
         }
@@ -499,6 +497,7 @@ function gerarTextoDoBanco() {
     textoFinal += `HISTÓRICO COMPILADO: ${historicoCompilado.trim()}\n`;
     if (compl) textoFinal += `INFO COMPLEMENTAR: ${compl}\n`;
     textoFinal += `====================================`;
+    textoFinal += `TA EM FAZE DE TESTE GENTE CALMA`;
 
     document.getElementById("resultado").value = textoFinal;
 }
