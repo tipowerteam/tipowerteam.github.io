@@ -18,7 +18,7 @@
 
         <div class="sidebar-body">
             <label for="regAtendente">Colaborador:</label>
-            <input type="text" id="regAtendente" placeholder="Nome do colaborador (Ex: Sgt. Ramos)">
+            <input type="text" id="regAtendente" placeholder="Nome do colaborador">
 
             <label for="regCategoria">Categoria:</label>
             <select id="regCategoria" onchange="atualizarDropdownsExistentesDaCategoria()">
@@ -26,7 +26,7 @@
             </select>
 
             <label for="regNomeCampo">Título/Opção:</label>
-            <input type="text" id="regNomeCampo" placeholder="Ex: Arma Utilizada ou Vítima Ferida?">
+            <input type="text" id="regNomeCampo" placeholder="Nova Circunstância">
 
             <label for="regTipoCampo">Tipo de Registro:</label>
             <select id="regTipoCampo" onchange="alternarCamposRegistro()">
@@ -44,26 +44,25 @@
                 </select>
 
                 <label for="regValorOpcao">Valor Selecionável da Opção:</label>
-                <input type="text" id="regValorOpcao" placeholder="Ex: Faca, Revólver, Parcial">
+                <input type="text" id="regValorOpcao" placeholder="Valor Selecionável">
             </div>
 
             <div id="areaDropdownNovoConfig" style="display: none;">
                 <label for="regValorOpcaoNovo">Primeiro Valor Selecionável deste Dropdown:</label>
-                <input type="text" id="regValorOpcaoNovo" placeholder="Ex: Sim, Não, Desconhecido">
+                <input type="text" id="regValorOpcaoNovo" placeholder="Valor Selecionável">
             </div>
 
             <label for="regTextoOutput">Descrição (Texto a ser gerado no Output):</label>
-            <input type="text" id="regTextoOutput" placeholder="Ex: com o emprego de arma branca,">
+            <input type="text" id="regTextoOutput" placeholder="Pedaço de Texto a ser gerado">
 
-            <label for="regOrdem">Prioridade (Número Inteiro):</label>
+            <label for="regOrdem">Prioridade:</label>
             <input type="number" id="regOrdem" value="10" placeholder="Ex: 10 (Início), 50 (Fim)">
 
             <fieldset class="secao-naturezas">
                 <legend>Naturezas Possíveis (Vincular)</legend>
 
-                <label for="buscaNatureza">Comece a digitar o nome da Natureza:</label>
                 <div class="autocomplete-container">
-                    <input type="text" id="buscaNatureza" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Ex: VIO...">
+                    <input type="text" id="buscaNatureza" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Digite uma possivel Natureza">
                     <div id="painelSugestoesInstantes" class="painel-sugestoes-busca"></div>
                 </div>
 
@@ -91,7 +90,7 @@
     <div id="camposDinamicos"></div>
 
     <label for="descricao">Informações Complementares (Manual)</label>
-    <textarea id="descricao" placeholder="Digite informações adicionais como características, rumo de fuga, roupas..."></textarea>
+    <textarea id="descricao" placeholder="Digite informações adicionais."></textarea>
 
     <h2>Resultado do Despacho</h2>
     <textarea id="resultado" readonly></textarea>
