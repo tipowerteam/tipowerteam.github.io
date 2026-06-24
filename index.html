@@ -39,19 +39,16 @@
         </div>
 
         <div class="sidebar-body">
-            <label for="regAtendente">Colaborador:</label>
-            <input type="text" id="regAtendente" placeholder="Nome do colaborador">
-
             <label for="regCategoria">Categoria:</label>
             <select id="regCategoria" onchange="atualizarDropdownsExistentesDaCategoria()">
                 <option value="">Selecione uma categoria base...</option>
             </select>
 
             <label for="regNomeCampo">Título/Opção:</label>
-            <input type="text" id="regNomeCampo" placeholder="Nova Circunstância">
+            <input type="text" id="regNomeCampo" placeholder="Nova Circunstância" oninput="atualizarPreviewAdmin()">
 
             <label for="regTipoCampo">Tipo de Registro:</label>
-            <select id="regTipoCampo" onchange="alternarCamposRegistro()">
+            <select id="regTipoCampo" onchange="alternarCamposRegistro(); atualizarPreviewAdmin();">
                 <option value="bool">Toggle / Boolean (Sim/Não)</option>
                 <option value="numero">Numeral Only (Apenas Números)</option>
                 <option value="texto">Campo de Texto Personalizado (Inputfield)</option>
@@ -75,10 +72,15 @@
             </div>
 
             <label for="regTextoOutput">Descrição (Texto a ser gerado no Output):</label>
-            <input type="text" id="regTextoOutput" placeholder="Pedaço de Texto a ser gerado">
+            <input type="text" id="regTextoOutput" placeholder="Pedaço de Texto a ser gerado" oninput="atualizarPreviewAdmin()">
 
-            <label for="regOrdem">Prioridade:</label>
-            <input type="number" id="regOrdem" value="10" placeholder="Ex: 10 (Início), 50 (Fim)">
+            <label for="regOrdem">Prioridade (Posição no Texto):</label>
+            <input type="number" id="regOrdem" value="10" placeholder="Ex: 10 (Início), 50 (Fim)" oninput="atualizarPreviewAdmin()">
+
+            <div class="preview-admin-box">
+                <h4>Preview da Posição do Texto:</h4>
+                <div id="previewTextoAdmin" class="preview-texto-linha">Selecione uma categoria ativa e preencha as opções para simular o texto final...</div>
+            </div>
 
             <fieldset class="secao-naturezas">
                 <legend>Naturezas Possíveis (Vincular)</legend>
@@ -104,7 +106,10 @@
 
     <hr>
 
-    <label for="natureza">Categoria da Ocorrência</label>
+    <div class="header-container-opcao">
+        <label for="natureza">Categoria da Ocorrência</label>
+        <button class="btn-atalho-add" onclick="abrirAdminComCategoria()" title="Adicionar pergunta nesta Categoria">➕</button>
+    </div>
     <select id="natureza">
         <option value="">Carregando...</option>
     </select>

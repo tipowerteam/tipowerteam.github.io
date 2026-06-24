@@ -38,6 +38,7 @@ function atualizarTudo() {
     timeout = setTimeout(() => {
         calcularProbabilidadesDoBanco();
         gerarTextoDoBanco();
+        atualizarPreviewAdmin(); // Mantém o sincronismo dinâmico também ao preencher a tela principal
     }, 200);
 }
 
@@ -57,12 +58,106 @@ function alternarTema() {
 
 function alternarPainelAdmin() {
     document.getElementById("painelAdmin").classList.toggle("aberto");
+    atualizarPreviewAdmin();
 }
 
 function alternarCamposRegistro() {
     const tipo = document.getElementById("regTipoCampo").value;
     document.getElementById("areaDropdownExistenteConfig").style.display = tipo === 'dropdown_existente' ? 'block' : 'none';
     document.getElementById("areaDropdownNovoConfig").style.display = tipo === 'dropdown_novo' ? 'block' : 'none';
+}
+
+// ATALHOS INTUITIVOS DE CRIAÇÃO ➕
+function abrirAdminComCategoria() {
+    const principalCat = document.getElementById("natureza").value;
+    if (principalCat) {
+        document.getElementById("regCategoria").value = principalCat;
+        atualizarDropdownsExistentesDaCategoria();
+    }
+    const painel = document.getElementById("painelAdmin");
+    if (!painel.classList.contains("aberto")) painel.classList.add("aberto");
+    atualizarPreviewAdmin();
+}
+
+function abrirAdminComDropdownExistente(perguntaId) {
+    document.getElementById("regTipoCampo").value = "dropdown_existente";
+    alternarCamposRegistro();
+
+    const principalCat = document.getElementById("natureza").value;
+    if (principalCat) {
+        document.getElementById("regCategoria").value = principalCat;
+        atualizarDropdownsExistentesDaCategoria().then(() => {
+            document.getElementById("regDropdownMae").value = perguntaId;
+        });
+    }
+
+    const painel = document.getElementById("painelAdmin");
+    if (!painel.classList.contains("aberto")) painel.classList.add("aberto");
+    atualizarPreviewAdmin();
+}
+
+// PREVIEW REAL-TIME DA POSIÇÃO E FRASE NO PAINEL ADMIN
+function atualizarPreviewAdmin() {
+    const previewContainer = document.getElementById("previewTextoAdmin");
+    if (!previewContainer) return;
+
+    const textoOutputDigitado = document.getElementById("regTextoOutput").value.trim();
+    const ordemDigitada = parseInt(document.getElementById("regOrdem").value) || 10;
+    const tipoCampo = document.getElementById("regTipoCampo").value;
+
+    let fragmentosFrase = [];
+
+    // 1. Pega tudo que já está ativado/preenchido na tela principal
+    perguntasDaCategoriaAtual.forEach(campo => {
+        const id = gerarId(campo.nome_campo);
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        if (campo.tipo_campo === "dropdown" && el.value) {
+            const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
+            if (opt && opt.texto_output) {
+                fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto || 10, target: false });
+            }
+        }
+        if (campo.tipo_campo === "bool" && el.checked) {
+            if (campo.texto_output_true) {
+                fragmentosFrase.push({ texto: campo.texto_output_true, ordem: campo.ordem_contexto_true || 10, target: false });
+            }
+        }
+        if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value) {
+            const txtBase = campo.tipo_campo === "numero" ? campo.texto_output_numero : campo.texto_output_true;
+            const ordemBase = campo.tipo_campo === "numero" ? campo.ordem_contexto_numero : campo.ordem_contexto_true;
+            if (txtBase) {
+                const txtPronto = txtBase.replace("{valor}", el.value);
+                fragmentosFrase.push({ texto: txtPronto, ordem: ordemBase || 10, target: false });
+            }
+        }
+    });
+
+    // 2. Injeta a opção que está sendo configurada AGORA pelo atendente
+    if (textoOutputDigitado) {
+        let textoSimulado = textoOutputDigitado;
+        if (tipoCampo === 'numero' || tipoCampo === 'texto') {
+            textoSimulado = textoOutputDigitado.includes("{valor}") ? textoOutputDigitado.replace("{valor}", "X") : `${textoOutputDigitado} [X]`;
+        }
+        fragmentosFrase.push({ texto: textoSimulado, ordem: ordemDigitada, target: true });
+    }
+
+    if (fragmentosFrase.length === 0) {
+        previewContainer.innerHTML = "<em>Digite a descrição para ver a simulação...</em>";
+        return;
+    }
+
+    // 3. Ordena tudo com base nas prioridades dinâmicas
+    fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
+
+    // 4. Monta o HTML destacando visualmente onde a nova opção vai entrar
+    previewContainer.innerHTML = fragmentosFrase.map(f => {
+        if (f.target) {
+            return `<span class="highlight-new-option" title="Prioridade: ${f.ordem}">${f.texto}</span>`;
+        }
+        return `<span>${f.texto}</span>`;
+    }).join(" ");
 }
 
 async function baixarEGuardarTodasAsNaturezas() {
@@ -164,17 +259,14 @@ async function atualizarDropdownsExistentesDaCategoria() {
 }
 
 async function salvarNovoRegistroCompleto() {
-    const colaborador = document.getElementById("regAtendente").value.trim();
+    // Campo de colaborador estático por enquanto para satisfazer a constraint, até a inserção da Auth.
+    const colaborador = "Atendente Autenticado";
     const categoriaId = document.getElementById("regCategoria").value;
     const nomeCampo = document.getElementById("regNomeCampo").value.trim();
     const tipoCampo = document.getElementById("regTipoCampo").value;
     const textoOutput = document.getElementById("regTextoOutput").value.trim();
     const ordem = parseInt(document.getElementById("regOrdem").value) || 10;
 
-    if (!colaborador) {
-        alert("Por favor, preencha quem é o Colaborador para fins de auditoria.");
-        return;
-    }
     if (!categoriaId || !nomeCampo || !textoOutput) {
         alert("Preencha todos os campos da opção!");
         return;
@@ -258,7 +350,7 @@ async function salvarNovoRegistroCompleto() {
             }
         }
 
-        alert(`Sucesso! Opção catalogada por ${colaborador}`);
+        alert(`Sucesso! Opção catalogada com segurança.`);
         document.getElementById("regNomeCampo").value = "";
         document.getElementById("regTextoOutput").value = "";
         naturezasVinculadasNoPainel = [];
@@ -274,7 +366,6 @@ async function salvarNovoRegistroCompleto() {
 
 async function carregarCategoriasDoBanco() {
     try {
-        // Modificado de 'nome' para 'id' para respeitar a ordenação sequencial do banco de dados
         let { data, error } = await supabaseClient.from('categorias').select('*').order('id', { ascending: true });
         if (error) throw error;
         dadosNaturezas = data || [];
@@ -343,12 +434,32 @@ async function atualizarCamposDoBanco() {
             }
 
             const divGroup = document.createElement("div");
+            divGroup.className = "input-group-dinamico";
             const id = gerarId(campo.nome_campo);
+
+            // Container do Rótulo + Botão rápido ➕
+            const labelContainer = document.createElement("div");
+            labelContainer.className = "header-container-opcao";
 
             const label = document.createElement("label");
             label.textContent = campo.nome_campo;
             label.htmlFor = id;
-            divGroup.appendChild(label);
+            labelContainer.appendChild(label);
+
+            // Se for do tipo dropdown, injeta o atalho rápido ➕ ao lado
+            if (campo.tipo_campo === "dropdown") {
+                const btnAdd = document.createElement("button");
+                btnAdd.className = "btn-atalho-add";
+                btnAdd.textContent = "➕";
+                btnAdd.title = "Adicionar nova opção a este dropdown";
+                btnAdd.onclick = (e) => {
+                    e.preventDefault();
+                    abrirAdminComDropdownExist(campo.id);
+                };
+                labelContainer.appendChild(btnAdd);
+            }
+
+            divGroup.appendChild(labelContainer);
 
             if (campo.tipo_campo === "dropdown") {
                 const select = document.createElement("select");
@@ -363,7 +474,6 @@ async function atualizarCamposDoBanco() {
                     });
                 }
 
-                // Listener remove o texto "Selecione..." assim que uma opção real é clicada
                 select.addEventListener("change", (e) => {
                     if (e.target.value !== "") {
                         const primeiraOpcao = e.target.options[0];
@@ -504,12 +614,11 @@ function gerarTextoDoBanco() {
     fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
     const historicoCompilado = fragmentosFrase.map(f => f.texto).join(" ");
 
-    // Sem área de descrição dedicada, removendo variáveis e preservando a reescrita limpa
     let textoFinal = `=== REGISTRO DE OCORRÊNCIA COPOM ===\n`;
     textoFinal += `CATEGORIA: ${categoriaTexto}\n`;
     textoFinal += `HISTÓRICO COMPILADO: ${historicoCompilado.trim()}\n`;
     textoFinal += `====================================\n`;
-    textoFinal += `TA EM FAZE DE TESTE GENTE CALMA`;
+    textoFinal += `TA EM FASE DE TESTE GENTE CALMA`;
 
     document.getElementById("resultado").value = textoFinal;
 }
@@ -520,7 +629,6 @@ function copiarTexto() {
 
     navigator.clipboard.writeText(resultado.value);
 
-    // Alertas de janela removidos. Dispara uma animação discreta via Toast CSS
     const toast = document.getElementById("toastCopia");
     if (toast) {
         toast.classList.add("visivel");
@@ -531,13 +639,10 @@ function copiarTexto() {
 }
 
 async function limparPagina() {
-    // Reseta o estado completo remontando o dropdown com as opções iniciais limpas
     document.getElementById("resultado").value = "";
     document.getElementById("camposDinamicos").innerHTML = "";
     document.getElementById("painelSugestoes").style.display = "none";
     perguntasDaCategoriaAtual = [];
-
-    // Restaura o dropdown inicial completo recarregando as categorias na ordem correta
     await carregarCategoriasDoBanco();
 }
 
