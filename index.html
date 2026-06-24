@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
-        /* Estilo rápido para a notificação discreta no rodapé */
         .toast-copia {
             position: fixed;
             bottom: 20px;
@@ -30,74 +29,6 @@
 </head>
 <body>
 
-    <button id="btnAdminToggle" onclick="alternarPainelAdmin()">⚙️ Painel do Registrador</button>
-
-    <div id="painelAdmin" class="sidebar-admin">
-        <div class="sidebar-header">
-            <h3>Registrar Opção / Pergunta</h3>
-            <button onclick="alternarPainelAdmin()" class="btn-fechar">&times;</button>
-        </div>
-
-        <div class="sidebar-body">
-            <label for="regCategoria">Categoria:</label>
-            <select id="regCategoria" onchange="atualizarDropdownsExistentesDaCategoria()">
-                <option value="">Selecione uma categoria base...</option>
-            </select>
-
-            <label for="regNomeCampo">Título/Opção:</label>
-            <input type="text" id="regNomeCampo" placeholder="Nova Circunstância" oninput="atualizarPreviewAdmin()">
-
-            <label for="regTipoCampo">Tipo de Registro:</label>
-            <select id="regTipoCampo" onchange="alternarCamposRegistro(); atualizarPreviewAdmin();">
-                <option value="bool">Toggle / Boolean (Sim/Não)</option>
-                <option value="numero">Numeral Only (Apenas Números)</option>
-                <option value="texto">Campo de Texto Personalizado (Inputfield)</option>
-                <option value="dropdown_novo">Dropdown (Criar um Novo)</option>
-                <option value="dropdown_existente">Dropdown (Adicionar opção a um Existente)</option>
-            </select>
-
-            <div id="areaDropdownExistenteConfig" style="display: none;">
-                <label for="regDropdownMae">Selecione o Dropdown Alvo:</label>
-                <select id="regDropdownMae">
-                    <option value="">Escolha o grupo...</option>
-                </select>
-
-                <label for="regValorOpcao">Valor Selecionável da Opção:</label>
-                <input type="text" id="regValorOpcao" placeholder="Valor Selecionável">
-            </div>
-
-            <div id="areaDropdownNovoConfig" style="display: none;">
-                <label for="regValorOpcaoNovo">Primeiro Valor Selecionável deste Dropdown:</label>
-                <input type="text" id="regValorOpcaoNovo" placeholder="Valor Selecionável">
-            </div>
-
-            <label for="regTextoOutput">Descrição (Texto a ser gerado no Output):</label>
-            <input type="text" id="regTextoOutput" placeholder="Pedaço de Texto a ser gerado" oninput="atualizarPreviewAdmin()">
-
-            <label for="regOrdem">Prioridade (Posição no Texto):</label>
-            <input type="number" id="regOrdem" value="10" placeholder="Ex: 10 (Início), 50 (Fim)" oninput="atualizarPreviewAdmin()">
-
-            <div class="preview-admin-box">
-                <h4>Preview da Posição do Texto:</h4>
-                <div id="previewTextoAdmin" class="preview-texto-linha">Selecione uma categoria ativa e preencha as opções para simular o texto final...</div>
-            </div>
-
-            <fieldset class="secao-naturezas">
-                <legend>Naturezas Possíveis (Vincular)</legend>
-
-                <div class="autocomplete-container">
-                    <input type="text" id="buscaNatureza" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Digite uma possivel Natureza">
-                    <div id="painelSugestoesInstantes" class="painel-sugestoes-busca"></div>
-                </div>
-
-                <span style="margin-top: 10px; display: block; font-weight: bold;">Naturezas Vinculadas a esta Opção:</span>
-                <ul id="listaNaturezasVinculadas" class="tags-naturezas"></ul>
-            </fieldset>
-
-            <button onclick="salvarNovoRegistroCompleto()" class="btn-principal" style="width: 100%; margin-top: 15px;">Registrar no Banco de dados</button>
-        </div>
-    </div>
-
     <div class="logo">
         <h1>SAOC</h1>
         <p class="subtitulo">(Sistema de Apoio a Ocorrências COPOM)</p>
@@ -106,13 +37,77 @@
 
     <hr>
 
-    <div class="header-container-opcao">
-        <label for="natureza">Categoria da Ocorrência</label>
-        <button class="btn-atalho-add" onclick="abrirAdminComCategoria()" title="Adicionar pergunta nesta Categoria">➕</button>
+    <div class="bloco-contextual">
+        <div class="header-container-opcao">
+            <label for="natureza"><strong>Categoria da Ocorrência</strong></label>
+            <button class="btn-atalho-add" onclick="exibirFormCriarCategoria()" title="Criar Nova Categoria no Banco">➕ Nova Categoria</button>
+        </div>
+        <select id="natureza">
+            <option value="">Carregando...</option>
+        </select>
     </div>
-    <select id="natureza">
-        <option value="">Carregando...</option>
-    </select>
+
+    <div id="areaCriarCategoria" class="box-registro-inline" style="display: none;">
+        <h3>📁 Criar Nova Categoria</h3>
+        <label for="newCatNome">Nome da Categoria:</label>
+        <input type="text" id="newCatNome" placeholder="Ex: Contra o Patrimônio">
+        <div class="botoes-inline">
+            <button onclick="salvarNovaCategoriaBanco()" class="btn-secundario">Salvar Categoria</button>
+            <button onclick="fecharFormCriarCategoria()" class="btn-perigo-outline">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="areaBotaoNovaOpcao" class="bloco-contextual" style="display: none; margin-bottom: 15px;">
+        <button class="btn-principal" onclick="exibirFormCriarOpcao()">➕ Registrar Nova Opção/Pergunta nesta Categoria</button>
+    </div>
+
+    <div id="areaCriarOpcao" class="box-registro-inline" style="display: none;">
+        <h3>📝 Registrar Opção / Pergunta</h3>
+
+        <label for="regTipoCampo">Tipo de Registro:</label>
+        <select id="regTipoCampo" onchange="alternarCamposRegistroInline(); atualizarPreviewInline();">
+            <option value="bool">Toggle / Boolean (Sim/Não)</option>
+            <option value="numero">Numeral Only (Apenas Números)</option>
+            <option value="texto">Campo de Texto Personalizado (Inputfield)</option>
+            <option value="dropdown_novo">Dropdown (Criar um Novo)</option>
+            <option value="dropdown_existente">Dropdown (Adicionar opção a um Existente)</option>
+        </select>
+
+        <div id="areaDropdownExistenteConfig" style="display: none;">
+            <label for="regDropdownMae">Selecione o Dropdown Alvo:</label>
+            <select id="regDropdownMae">
+                <option value="">Escolha o grupo...</option>
+            </select>
+        </div>
+
+        <div id="areaDropdownNovoConfig" style="display: none;">
+            <label for="regNomeDropdownNovo">Nome do Novo Dropdown:</label>
+            <input type="text" id="regNomeDropdownNovo" placeholder="Ex: Tipo de Arma">
+        </div>
+
+        <label for="regNomeCampo">Título / Opção Selecionável:</label>
+        <input type="text" id="regNomeCampo" placeholder="Ex: Com violência / Faca de cozinha" oninput="atualizarPreviewInline()">
+
+        <label for="regTextoOutput">Descrição (Texto a ser gerado no Output):</label>
+        <input type="text" id="regTextoOutput" placeholder="Pedaço de texto gerado no despacho" oninput="atualizarPreviewInline()">
+
+        <label for="regOrdem">Prioridade (Posição no Texto):</label>
+        <input type="number" id="regOrdem" value="10" oninput="atualizarPreviewInline()">
+
+        <fieldset class="secao-naturezas-inline">
+            <legend>Vincular a quais Naturezas?</legend>
+            <div class="autocomplete-container">
+                <input type="text" id="buscaNatureza" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Digite para buscar uma natureza...">
+                <div id="painelSugestoesInstantes" class="painel-sugestoes-busca"></div>
+            </div>
+            <ul id="listaNaturezasVinculadas" class="tags-naturezas"></ul>
+        </fieldset>
+
+        <div class="botoes-inline" style="margin-top: 15px;">
+            <button onclick="salvarNovoRegistroInline()" class="btn-secundario">Salvar Registro no Banco</button>
+            <button onclick="fecharFormCriarOpcao()" class="btn-perigo-outline">Cancelar</button>
+        </div>
+    </div>
 
     <div id="camposDinamicos"></div>
 

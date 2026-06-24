@@ -1,4 +1,3 @@
-// CONFIGURAÇÃO DO SUPABASE
 const SUPABASE_URL = "https://pzovfmlsmcyiupdxbwai.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bisQorN4Yz-WC3YAZTBsjA_HlPeI4h5";
 
@@ -6,8 +5,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let dadosNaturezas = [];
 let perguntasDaCategoriaAtual = [];
-let listaMapeadaNaturezasCopom = []; // Cache local para autocomplete instantâneo
-let naturezasVinculadasNoPainel = []; // IDs selecionados no painel admin
+let listaMapeadaNaturezasCopom = [];
+let naturezasVinculadasNoPainel = [];
 
 window.onload = async () => {
     if (localStorage.getItem("theme") === "dark") {
@@ -19,7 +18,6 @@ window.onload = async () => {
     await carregarCategoriasDoBanco();
     await baixarEGuardarTodasAsNaturezas();
 
-    // Tratamento do Dropdown Principal para apagar a opção "Selecione..." ao mudar
     const selectNatureza = document.getElementById("natureza");
     selectNatureza.addEventListener("change", (e) => {
         if (e.target.value !== "") {
@@ -27,6 +25,11 @@ window.onload = async () => {
             if (primeiraOpcao && primeiraOpcao.value === "") {
                 primeiraOpcao.remove();
             }
+            // Exibe o botão de criar perguntas apenas se houver categoria ativa
+            document.getElementById("areaBotaoNovaOpcao").style.display = "block";
+        } else {
+            document.getElementById("areaBotaoNovaOpcao").style.display = "none";
+            fecharFormCriarOpcao();
         }
         atualizarCamposDoBanco();
     });
@@ -38,7 +41,6 @@ function atualizarTudo() {
     timeout = setTimeout(() => {
         calcularProbabilidadesDoBanco();
         gerarTextoDoBanco();
-        atualizarPreviewAdmin(); // Mantém o sincronismo dinâmico também ao preencher a tela principal
     }, 200);
 }
 
@@ -56,184 +58,52 @@ function alternarTema() {
     }
 }
 
-function alternarPainelAdmin() {
-    document.getElementById("painelAdmin").classList.toggle("aberto");
-    atualizarPreviewAdmin();
+// CONTROLADORES DE INTERFACE INLINE (TELA PRINCIPAL)
+function exibirFormCriarCategoria() {
+    document.getElementById("areaCriarCategoria").style.display = "block";
+}
+function fecharFormCriarCategoria() {
+    document.getElementById("areaCriarCategoria").style.display = "none";
+    document.getElementById("newCatNome").value = "";
 }
 
-function alternarCamposRegistro() {
+function exibirFormCriarOpcao() {
+    document.getElementById("areaCriarOpcao").style.display = "block";
+    atualizarDropdownsExistentesDaCategoriaInline();
+    atualizarPreviewInline();
+}
+function fecharFormCriarOpcao() {
+    document.getElementById("areaCriarOpcao").style.display = "none";
+    document.getElementById("regNomeCampo").value = "";
+    document.getElementById("regTextoOutput").value = "";
+    document.getElementById("regNomeDropdownNovo").value = "";
+    naturezasVinculadasNoPainel = [];
+    renderizarTagsNaturezas();
+    atualizarTudo();
+}
+
+function alternarCamposRegistroInline() {
     const tipo = document.getElementById("regTipoCampo").value;
     document.getElementById("areaDropdownExistenteConfig").style.display = tipo === 'dropdown_existente' ? 'block' : 'none';
     document.getElementById("areaDropdownNovoConfig").style.display = tipo === 'dropdown_novo' ? 'block' : 'none';
 }
 
-// ATALHOS INTUITIVOS DE CRIAÇÃO ➕
-function abrirAdminComCategoria() {
-    const principalCat = document.getElementById("natureza").value;
-    if (principalCat) {
-        document.getElementById("regCategoria").value = principalCat;
-        atualizarDropdownsExistentesDaCategoria();
-    }
-    const painel = document.getElementById("painelAdmin");
-    if (!painel.classList.contains("aberto")) painel.classList.add("aberto");
-    atualizarPreviewAdmin();
-}
-
-function abrirAdminComDropdownExistente(perguntaId) {
+function abrirAtalhoDropdownExistente(perguntaId) {
+    exibirFormCriarOpcao();
     document.getElementById("regTipoCampo").value = "dropdown_existente";
-    alternarCamposRegistro();
-
-    const principalCat = document.getElementById("natureza").value;
-    if (principalCat) {
-        document.getElementById("regCategoria").value = principalCat;
-        atualizarDropdownsExistentesDaCategoria().then(() => {
-            document.getElementById("regDropdownMae").value = perguntaId;
-        });
-    }
-
-    const painel = document.getElementById("painelAdmin");
-    if (!painel.classList.contains("aberto")) painel.classList.add("aberto");
-    atualizarPreviewAdmin();
+    alternarCamposRegistroInline();
+    setTimeout(() => {
+        document.getElementById("regDropdownMae").value = perguntaId;
+    }, 300);
 }
 
-// PREVIEW REAL-TIME DA POSIÇÃO E FRASE NO PAINEL ADMIN
-function atualizarPreviewAdmin() {
-    const previewContainer = document.getElementById("previewTextoAdmin");
-    if (!previewContainer) return;
-
-    const textoOutputDigitado = document.getElementById("regTextoOutput").value.trim();
-    const ordemDigitada = parseInt(document.getElementById("regOrdem").value) || 10;
-    const tipoCampo = document.getElementById("regTipoCampo").value;
-
-    let fragmentosFrase = [];
-
-    // 1. Pega tudo que já está ativado/preenchido na tela principal
-    perguntasDaCategoriaAtual.forEach(campo => {
-        const id = gerarId(campo.nome_campo);
-        const el = document.getElementById(id);
-        if (!el) return;
-
-        if (campo.tipo_campo === "dropdown" && el.value) {
-            const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
-            if (opt && opt.texto_output) {
-                fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto || 10, target: false });
-            }
-        }
-        if (campo.tipo_campo === "bool" && el.checked) {
-            if (campo.texto_output_true) {
-                fragmentosFrase.push({ texto: campo.texto_output_true, ordem: campo.ordem_contexto_true || 10, target: false });
-            }
-        }
-        if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value) {
-            const txtBase = campo.tipo_campo === "numero" ? campo.texto_output_numero : campo.texto_output_true;
-            const ordemBase = campo.tipo_campo === "numero" ? campo.ordem_contexto_numero : campo.ordem_contexto_true;
-            if (txtBase) {
-                const txtPronto = txtBase.replace("{valor}", el.value);
-                fragmentosFrase.push({ texto: txtPronto, ordem: ordemBase || 10, target: false });
-            }
-        }
-    });
-
-    // 2. Injeta a opção que está sendo configurada AGORA pelo atendente
-    if (textoOutputDigitado) {
-        let textoSimulado = textoOutputDigitado;
-        if (tipoCampo === 'numero' || tipoCampo === 'texto') {
-            textoSimulado = textoOutputDigitado.includes("{valor}") ? textoOutputDigitado.replace("{valor}", "X") : `${textoOutputDigitado} [X]`;
-        }
-        fragmentosFrase.push({ texto: textoSimulado, ordem: ordemDigitada, target: true });
-    }
-
-    if (fragmentosFrase.length === 0) {
-        previewContainer.innerHTML = "<em>Digite a descrição para ver a simulação...</em>";
-        return;
-    }
-
-    // 3. Ordena tudo com base nas prioridades dinâmicas
-    fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
-
-    // 4. Monta o HTML destacando visualmente onde a nova opção vai entrar
-    previewContainer.innerHTML = fragmentosFrase.map(f => {
-        if (f.target) {
-            return `<span class="highlight-new-option" title="Prioridade: ${f.ordem}">${f.texto}</span>`;
-        }
-        return `<span>${f.texto}</span>`;
-    }).join(" ");
+// PREVIEW DINÂMICO EM TEMPO REAL DIRETAMENTE NO TEXTAREA DE OUTPUT
+function atualizarPreviewInline() {
+    gerarTextoDoBanco();
 }
 
-async function baixarEGuardarTodasAsNaturezas() {
-    try {
-        let { data, error } = await supabaseClient
-            .from('naturezas_copom')
-            .select('id, natureza');
-
-        if (error) throw error;
-        listaMapeadaNaturezasCopom = data || [];
-    } catch (err) {
-        console.error("Erro ao carregar naturezas para autocomplete:", err);
-    }
-}
-
-function filtrarNaturezasAutocomplete(termoBusca) {
-    const painel = document.getElementById("painelSugestoesInstantes");
-    if (!termoBusca || termoBusca.trim().length < 1) {
-        painel.style.display = "none";
-        return;
-    }
-
-    const termoLimpo = termoBusca.toUpperCase();
-    const filtradas = listaMapeadaNaturezasCopom.filter(nat =>
-        nat.natureza && nat.natureza.toUpperCase().includes(termoLimpo)
-    );
-
-    painel.innerHTML = "";
-    if (filtradas.length === 0) {
-        painel.innerHTML = '<div class="item-sugestao">Nenhuma correspondência...</div>';
-    } else {
-        filtradas.slice(0, 10).forEach(nat => {
-            const div = document.createElement("div");
-            div.className = "item-sugestao";
-            div.textContent = nat.natureza;
-            div.style.padding = "8px";
-            div.style.cursor = "pointer";
-            div.onclick = () => {
-                vincularNaturezaAdmin(nat.id, nat.natureza);
-            };
-            painel.appendChild(div);
-        });
-    }
-    painel.style.display = "block";
-}
-
-function vincularNaturezaAdmin(id, nome) {
-    document.getElementById("painelSugestoesInstantes").style.display = "none";
-    document.getElementById("buscaNatureza").value = "";
-
-    if (naturezasVinculadasNoPainel.includes(id)) return;
-
-    naturezasVinculadasNoPainel.push(id);
-    renderizarTagsNaturezas();
-}
-
-function removerNaturezaAdmin(id) {
-    naturezasVinculadasNoPainel = naturezasVinculadasNoPainel.filter(nId => nId !== id);
-    renderizarTagsNaturezas();
-}
-
-function renderizarTagsNaturezas() {
-    const ul = document.getElementById("listaNaturezasVinculadas");
-    ul.innerHTML = "";
-    naturezasVinculadasNoPainel.forEach(id => {
-        const natObj = listaMapeadaNaturezasCopom.find(n => n.id === id);
-        if (natObj) {
-            const li = document.createElement("li");
-            li.innerHTML = `${natObj.natureza} <button class="btn-remover-tag" onclick="removerNaturezaAdmin(${id})">&times;</button>`;
-            ul.appendChild(li);
-        }
-    });
-}
-
-async function atualizarDropdownsExistentesDaCategoria() {
-    const catId = document.getElementById("regCategoria").value;
+async function atualizarDropdownsExistentesDaCategoriaInline() {
+    const catId = document.getElementById("natureza").value;
     const selectDropdownsMap = document.getElementById("regDropdownMae");
     selectDropdownsMap.innerHTML = '<option value="">Carregando...</option>';
 
@@ -258,21 +128,40 @@ async function atualizarDropdownsExistentesDaCategoria() {
     } catch (e) { console.error(e); }
 }
 
-async function salvarNovoRegistroCompleto() {
-    // Campo de colaborador estático por enquanto para satisfazer a constraint, até a inserção da Auth.
+// OPERAÇÕES DO BANCO DE DADOS (SUPABASE)
+async function salvarNovaCategoriaBanco() {
+    const nomeCat = document.getElementById("newCatNome").value.trim();
+    if (!nomeCat) {
+        alert("Digite o nome da categoria!");
+        return;
+    }
+    try {
+        const { error } = await supabaseClient.from('categorias').insert([{ nome: nomeCat }]);
+        if (error) throw error;
+        alert("Categoria adicionada com sucesso!");
+        fecharFormCriarCategoria();
+        await carregarCategoriasDoBanco();
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao salvar categoria.");
+    }
+}
+
+async function salvarNovoRegistroInline() {
     const colaborador = "Atendente Autenticado";
-    const categoriaId = document.getElementById("regCategoria").value;
-    const nomeCampo = document.getElementById("regNomeCampo").value.trim();
+    const categoriaId = document.getElementById("natureza").value;
     const tipoCampo = document.getElementById("regTipoCampo").value;
     const textoOutput = document.getElementById("regTextoOutput").value.trim();
     const ordem = parseInt(document.getElementById("regOrdem").value) || 10;
 
-    if (!categoriaId || !nomeCampo || !textoOutput) {
-        alert("Preencha todos os campos da opção!");
-        return;
+    let nomeCampo = document.getElementById("regNomeCampo").value.trim();
+
+    if (tipoCampo === 'dropdown_novo') {
+        nomeCampo = document.getElementById("regNomeDropdownNovo").value.trim();
     }
-    if (naturezasVinculadasNoPainel.length === 0) {
-        alert("Vincule ao menos uma natureza usando o campo de busca!");
+
+    if (!categoriaId || !nomeCampo || !textoOutput) {
+        alert("Preencha todos os campos obrigatórios para o registro!");
         return;
     }
 
@@ -298,7 +187,7 @@ async function salvarNovoRegistroCompleto() {
             }
 
         } else if (tipoCampo === 'dropdown_novo') {
-            const valorInicial = document.getElementById("regValorOpcaoNovo").value.trim() || "Padrão";
+            const valorInicial = document.getElementById("regNomeCampo").value.trim() || "Padrão";
             const { data: novaPerg, error: err } = await supabaseClient
                 .from('perguntas')
                 .insert([{
@@ -326,10 +215,8 @@ async function salvarNovoRegistroCompleto() {
 
         } else if (tipoCampo === 'dropdown_existente') {
             const perguntaIdMae = document.getElementById("regDropdownMae").value;
-            const valorSubOpcao = document.getElementById("regValorOpcao").value.trim();
-
-            if (!perguntaIdMae || !valorSubOpcao) {
-                alert("Selecione o dropdown e defina o valor da opção!");
+            if (!perguntaIdMae) {
+                alert("Selecione o dropdown existente alvo!");
                 return;
             }
 
@@ -337,7 +224,7 @@ async function salvarNovoRegistroCompleto() {
                 .from('opcoes_dropdown')
                 .insert([{
                     pergunta_id: perguntaIdMae,
-                    valor_opcao: valorSubOpcao,
+                    valor_opcao: nomeCampo, // No existente, o título inserido passa a ser o valor selecionável
                     texto_output: textoOutput,
                     ordem_contexto: ordem,
                     registrado_por: colaborador
@@ -350,18 +237,66 @@ async function salvarNovoRegistroCompleto() {
             }
         }
 
-        alert(`Sucesso! Opção catalogada com segurança.`);
-        document.getElementById("regNomeCampo").value = "";
-        document.getElementById("regTextoOutput").value = "";
-        naturezasVinculadasNoPainel = [];
-        renderizarTagsNaturezas();
-        alternarPainelAdmin();
+        alert("Opção registrada diretamente no sistema com sucesso!");
+        fecharFormCriarOpcao();
         await atualizarCamposDoBanco();
 
     } catch (e) {
         console.error(e);
-        alert("Erro ao gravar dados no Supabase.");
+        alert("Erro ao salvar dados no Supabase.");
     }
+}
+
+async function baixarEGuardarTodasAsNaturezas() {
+    try {
+        let { data, error } = await supabaseClient.from('naturezas_copom').select('id, natureza');
+        if (error) throw error;
+        listaMapeadaNaturezasCopom = data || [];
+    } catch (err) { console.error(err); }
+}
+
+function filtrarNaturezasAutocomplete(termoBusca) {
+    const painel = document.getElementById("painelSugestoesInstantes");
+    if (!termoBusca || termoBusca.trim().length < 1) {
+        painel.style.display = "none";
+        return;
+    }
+    const termoLimpo = termoBusca.toUpperCase();
+    const filtradas = listaMapeadaNaturezasCopom.filter(nat => nat.natureza && nat.natureza.toUpperCase().includes(termoLimpo));
+
+    painel.innerHTML = "";
+    if (filtradas.length === 0) {
+        painel.innerHTML = '<div class="item-sugestao">Nenhuma correspondência...</div>';
+    } else {
+        filtradas.slice(0, 10).forEach(nat => {
+            const div = document.createElement("div");
+            div.className = "item-sugestao";
+            div.textContent = nat.natureza;
+            div.onclick = () => {
+                document.getElementById("painelSugestoesInstantes").style.display = "none";
+                document.getElementById("buscaNatureza").value = "";
+                if (!naturezasVinculadasNoPainel.includes(nat.id)) {
+                    naturezasVinculadasNoPainel.push(nat.id);
+                    renderizarTagsNaturezas();
+                }
+            };
+            painel.appendChild(div);
+        });
+    }
+    painel.style.display = "block";
+}
+
+function renderizarTagsNaturezas() {
+    const ul = document.getElementById("listaNaturezasVinculadas");
+    ul.innerHTML = "";
+    naturezasVinculadasNoPainel.forEach(id => {
+        const natObj = listaMapeadaNaturezasCopom.find(n => n.id === id);
+        if (natObj) {
+            const li = document.createElement("li");
+            li.innerHTML = `${natObj.natureza} <button class="btn-remover-tag" onclick="naturezasVinculadasNoPainel=naturezasVinculadasNoPainel.filter(nId=>nId!==${id});renderizarTagsNaturezas();">&times;</button>`;
+            ul.appendChild(li);
+        }
+    });
 }
 
 async function carregarCategoriasDoBanco() {
@@ -371,17 +306,13 @@ async function carregarCategoriasDoBanco() {
         dadosNaturezas = data || [];
 
         const selectPrincipal = document.getElementById("natureza");
-        const selectAdmin = document.getElementById("regCategoria");
-
         selectPrincipal.innerHTML = '<option value="">Selecione a Categoria...</option>';
-        selectAdmin.innerHTML = '<option value="">Selecione uma categoria base...</option>';
 
         dadosNaturezas.forEach(cat => {
             const option = document.createElement("option");
             option.value = cat.id;
             option.textContent = cat.nome;
-            selectPrincipal.appendChild(option.cloneNode(true));
-            selectAdmin.appendChild(option);
+            selectPrincipal.appendChild(option);
         });
     } catch (erro) { console.error(erro); }
 }
@@ -410,25 +341,16 @@ async function atualizarCamposDoBanco() {
 
         for (let campo of perguntasDaCategoriaAtual) {
             if (campo.tipo_campo === "dropdown") {
-                let { data: opcoes } = await supabaseClient
-                    .from('opcoes_dropdown')
-                    .select('*')
-                    .eq('pergunta_id', campo.id);
+                let { data: opcoes } = await supabaseClient.from('opcoes_dropdown').select('*').eq('pergunta_id', campo.id);
                 campo.opcoes_dropdown = opcoes || [];
             }
 
-            let { data: vPesos } = await supabaseClient
-                .from('vinculos_pesos')
-                .select('natureza_id, naturezas_copom(natureza)')
-                .eq('pergunta_id', campo.id);
+            let { data: vPesos } = await supabaseClient.from('vinculos_pesos').select('natureza_id, naturezas_copom(natureza)').eq('pergunta_id', campo.id);
             campo.vinculos_pesos = vPesos || [];
 
             if (campo.opcoes_dropdown) {
                 for (let opt of campo.opcoes_dropdown) {
-                    let { data: vOptPesos } = await supabaseClient
-                        .from('vinculos_pesos')
-                        .select('natureza_id, naturezas_copom(natureza)')
-                        .eq('opcao_dropdown_id', opt.id);
+                    let { data: vOptPesos } = await supabaseClient.from('vinculos_pesos').select('natureza_id, naturezas_copom(natureza)').eq('opcao_dropdown_id', opt.id);
                     opt.vinculos_pesos = vOptPesos || [];
                 }
             }
@@ -437,7 +359,6 @@ async function atualizarCamposDoBanco() {
             divGroup.className = "input-group-dinamico";
             const id = gerarId(campo.nome_campo);
 
-            // Container do Rótulo + Botão rápido ➕
             const labelContainer = document.createElement("div");
             labelContainer.className = "header-container-opcao";
 
@@ -446,15 +367,14 @@ async function atualizarCamposDoBanco() {
             label.htmlFor = id;
             labelContainer.appendChild(label);
 
-            // Se for do tipo dropdown, injeta o atalho rápido ➕ ao lado
             if (campo.tipo_campo === "dropdown") {
                 const btnAdd = document.createElement("button");
                 btnAdd.className = "btn-atalho-add";
-                btnAdd.textContent = "➕";
-                btnAdd.title = "Adicionar nova opção a este dropdown";
+                btnAdd.textContent = "➕ Adicionar Opção";
+                // Corrigido aqui: Aponta perfeitamente para a nova função inline da tela principal
                 btnAdd.onclick = (e) => {
                     e.preventDefault();
-                    abrirAdminComDropdownExist(campo.id);
+                    abrirAtalhoDropdownExistente(campo.id);
                 };
                 labelContainer.appendChild(btnAdd);
             }
@@ -473,13 +393,10 @@ async function atualizarCamposDoBanco() {
                         select.appendChild(option);
                     });
                 }
-
                 select.addEventListener("change", (e) => {
                     if (e.target.value !== "") {
                         const primeiraOpcao = e.target.options[0];
-                        if (primeiraOpcao && primeiraOpcao.value === "") {
-                            primeiraOpcao.remove();
-                        }
+                        if (primeiraOpcao && primeiraOpcao.value === "") primeiraOpcao.remove();
                     }
                     atualizarTudo();
                 });
@@ -500,21 +417,17 @@ async function atualizarCamposDoBanco() {
                 const input = document.createElement("input");
                 input.type = campo.tipo_campo === "numero" ? "number" : "text";
                 input.id = id;
-                if (campo.tipo_campo === "numero") input.min = "0";
                 input.addEventListener("input", atualizarTudo);
                 divGroup.appendChild(input);
             }
 
             container.appendChild(divGroup);
         }
-    } catch (erro) {
-        console.error("Erro ao estruturar campos dinâmicos:", erro);
-    }
+    } catch (erro) { console.error(erro); }
 }
 
 function calcularProbabilidadesDoBanco() {
     if (!perguntasDaCategoriaAtual.length) return;
-
     let arrayVotosNaturezas = [];
 
     perguntasDaCategoriaAtual.forEach(campo => {
@@ -525,26 +438,14 @@ function calcularProbabilidadesDoBanco() {
         if (campo.tipo_campo === "dropdown" && el.value) {
             const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
             if (opt && opt.vinculos_pesos) {
-                opt.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
-                });
+                opt.vinculos_pesos.forEach(v => { if (v.naturezas_copom?.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza); });
             }
         }
-
         if (campo.tipo_campo === "bool" && el.checked) {
-            if (campo.vinculos_pesos) {
-                campo.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
-                });
-            }
+            campo.vinculos_pesos?.forEach(v => { if (v.naturezas_copom?.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza); });
         }
-
         if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value.trim() !== "") {
-            if (campo.vinculos_pesos) {
-                campo.vinculos_pesos.forEach(v => {
-                    if (v.naturezas_copom && v.naturezas_copom.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza);
-                });
-            }
+            campo.vinculos_pesos?.forEach(v => { if (v.naturezas_copom?.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza); });
         }
     });
 
@@ -553,16 +454,10 @@ function calcularProbabilidadesDoBanco() {
     lista.innerHTML = "";
 
     const totalDeVotosAtivos = arrayVotosNaturezas.length;
-
     if (totalDeVotosAtivos > 0) {
         let contagemFrequencia = {};
-        arrayVotosNaturezas.forEach(nome => {
-            contagemFrequencia[nome] = (contagemFrequencia[nome] || 0) + 1;
-        });
-
-        const ordenadoPorProporcao = Object.entries(contagemFrequencia)
-            .sort((a, b) => b[1] - a[1]);
-
+        arrayVotosNaturezas.forEach(nome => { contagemFrequencia[nome] = (contagemFrequencia[nome] || 0) + 1; });
+        const ordenadoPorProporcao = Object.entries(contagemFrequencia).sort((a, b) => b[1] - a[1]);
         document.getElementById("painelSugestoes").style.display = "block";
         ordenadoPorProporcao.forEach(([nomeNat, quantidade]) => {
             const li = document.createElement("li");
@@ -578,11 +473,11 @@ function calcularProbabilidadesDoBanco() {
 function gerarTextoDoBanco() {
     const selectCat = document.getElementById("natureza");
     const categoriaTexto = selectCat.options[selectCat.selectedIndex]?.text || "";
-
-    if (!categoriaTexto || !perguntasDaCategoriaAtual.length) return;
+    if (!categoriaTexto) return;
 
     let fragmentosFrase = [];
 
+    // 1. Coleta itens já marcados em tempo real na tela principal
     perguntasDaCategoriaAtual.forEach(campo => {
         const id = gerarId(campo.nome_campo);
         const el = document.getElementById(id);
@@ -590,26 +485,33 @@ function gerarTextoDoBanco() {
 
         if (campo.tipo_campo === "dropdown" && el.value) {
             const opt = campo.opcoes_dropdown?.find(o => o.valor_opcao === el.value);
-            if (opt && opt.texto_output) {
-                fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto || 10 });
-            }
+            if (opt?.texto_output) fragmentosFrase.push({ texto: opt.texto_output, ordem: opt.ordem_contexto || 10 });
         }
-
         if (campo.tipo_campo === "bool" && el.checked) {
-            if (campo.texto_output_true) {
-                fragmentosFrase.push({ texto: campo.texto_output_true, ordem: campo.ordem_contexto_true || 10 });
-            }
+            if (campo.texto_output_true) fragmentosFrase.push({ texto: campo.texto_output_true, ordem: campo.ordem_contexto_true || 10 });
         }
-
         if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value) {
             const txtBase = campo.tipo_campo === "numero" ? campo.texto_output_numero : campo.texto_output_true;
             const ordemBase = campo.tipo_campo === "numero" ? campo.ordem_contexto_numero : campo.ordem_contexto_true;
             if (txtBase) {
-                const txtPronto = txtBase.replace("{valor}", el.value);
-                fragmentosFrase.push({ texto: txtPronto, ordem: ordemBase || 10 });
+                fragmentosFrase.push({ texto: txtBase.replace("{valor}", el.value), ordem: ordemBase || 10 });
             }
         }
     });
+
+    // 2. Injeta dinamicamente a nova opção em criação para visualização imediata do atendente
+    const areaOpcaoVisivel = document.getElementById("areaCriarOpcao").style.display === "block";
+    const txtNovo = document.getElementById("regTextoOutput").value.trim();
+    const ordemNova = parseInt(document.getElementById("regOrdem").value) || 10;
+    const tipoNovo = document.getElementById("regTipoCampo").value;
+
+    if (areaOpcaoVisivel && txtNovo) {
+        let placeholderTxt = txtNovo;
+        if (tipoNovo === 'numero' || tipoNovo === 'texto') {
+            placeholderTxt = txtNovo.includes("{valor}") ? txtNovo.replace("{valor}", "[VALOR]") : `${txtNovo} [VALOR]`;
+        }
+        fragmentosFrase.push({ texto: `<< CRIAÇÃO: ${placeholderTxt} >>`, ordem: ordemNova });
+    }
 
     fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
     const historicoCompilado = fragmentosFrase.map(f => f.texto).join(" ");
@@ -626,15 +528,11 @@ function gerarTextoDoBanco() {
 function copiarTexto() {
     const resultado = document.getElementById("resultado");
     if (!resultado || !resultado.value) return;
-
     navigator.clipboard.writeText(resultado.value);
-
     const toast = document.getElementById("toastCopia");
     if (toast) {
         toast.classList.add("visivel");
-        setTimeout(() => {
-            toast.classList.remove("visivel");
-        }, 2000);
+        setTimeout(() => { toast.classList.remove("visivel"); }, 2000);
     }
 }
 
@@ -642,7 +540,10 @@ async function limparPagina() {
     document.getElementById("resultado").value = "";
     document.getElementById("camposDinamicos").innerHTML = "";
     document.getElementById("painelSugestoes").style.display = "none";
+    document.getElementById("areaBotaoNovaOpcao").style.display = "none";
     perguntasDaCategoriaAtual = [];
+    fecharFormCriarOpcao();
+    fecharFormCriarCategoria();
     await carregarCategoriasDoBanco();
 }
 
