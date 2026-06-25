@@ -1,264 +1,71 @@
-:root {
-    --bg-principal: #f5f7fb;
-    --bg-card: #ffffff;
-    --texto-principal: #2d3748;
-    --texto-secundario: #4a5568;
-    --borda: #cbd5e1;
-    --cor-botao: #1e3a8a;
-    --cor-botao-hover: #172554;
-    --cor-sucesso: #10b981;
-    --cor-perigo: #ef4444;
-    --bg-admin: #f8fafc;
-    --cor-destaque: #f59e0b;
-}
+/* ==========================================================================
+   NOVOS ESTILOS PARA O FLUXO DE CRIAÇÃO E GRID & SNAP (SORTABLEJS)
+   ========================================================================== */
 
-body[data-theme="dark"] {
-    --bg-principal: #0f172a;
-    --bg-card: #1e293b;
-    --texto-principal: #f8fafc;
-    --texto-secundario: #94a3b8;
-    --borda: #334155;
-    --cor-botao: #3b82f6;
-    --cor-botao-hover: #2563eb;
-    --bg-admin: #1e293b;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
-    background: var(--bg-principal);
-    color: var(--texto-principal);
-    transition: background 0.3s, color 0.3s;
-}
-
-.logo h1 {
-    margin: 0;
-}
-
-.subtitulo {
-    margin: 0;
-    font-size: 0.9rem;
-    opacity: 0.8;
-}
-
-input, textarea, select {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    margin-bottom: 15px;
-    box-sizing: border-box;
-    background-color: var(--bg-card);
-    color: var(--texto-principal);
-    border: 1px solid var(--borda);
-    border-radius: 4px;
-}
-
-button {
-    background: var(--cor-botao);
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-    button:hover {
-        background: var(--cor-botao-hover);
-    }
-
-#btnTema {
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    z-index: 1000;
-}
-
-.bloco-contextual {
-    margin-top: 15px;
-}
-
-.header-container-opcao {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-}
-
-.btn-atalho-add {
-    background-color: transparent;
-    color: var(--cor-botao);
-    border: 1px solid var(--borda);
-    padding: 4px 8px;
-    font-size: 0.85rem;
-    border-radius: 4px;
-}
-
-    .btn-atalho-add:hover {
-        background-color: var(--bg-admin);
-        color: var(--cor-botao-hover);
-    }
-
-.box-registro-inline {
-    background-color: var(--bg-admin);
-    border: 2px dashed var(--cor-destaque);
-    border-radius: 6px;
-    padding: 18px;
-    margin: 15px 0;
-}
-
-    .box-registro-inline h3 {
-        margin: 0 0 12px 0;
-        color: var(--texto-principal);
-        font-size: 1.1rem;
-    }
-
-.botoes-inline {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-perigo-outline {
-    background: transparent;
-    color: var(--cor-perigo);
-    border: 1px solid var(--cor-perigo);
-}
-
-    .btn-perigo-outline:hover {
-        background: var(--cor-perigo);
-        color: white;
-    }
-
-/* GRID COMPARTIMENTADO SNAP/DRAG DO TEXTO DE SAÍDA */
+/* Container do Grid & Snap */
 .despacho-preview-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 15px;
-    background-color: var(--bg-card);
-    border: 2px dashed var(--cor-botao);
-    border-radius: 6px;
-    margin-bottom: 15px;
-    min-height: 60px;
-}
-
-.bloco-frase-arrastavel {
-    background-color: var(--bg-principal);
-    border: 1px solid var(--borda);
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: move;
-    user-select: none;
-    font-weight: 500;
-    transition: transform 0.1s ease, border-color 0.2s;
-}
-
-    .bloco-frase-arrastavel.arrastando {
-        opacity: 0.4;
-        border-color: var(--cor-destaque);
-    }
-
-    .bloco-frase-arrastavel.item-criacao {
-        border: 2px solid var(--cor-destaque);
-        background-color: rgba(245, 158, 11, 0.1);
-    }
-
-.secao-naturezas-inline {
-    border: 1px solid var(--borda);
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 15px;
-    background-color: var(--bg-card);
-}
-
-.autocomplete-container {
-    position: relative;
-    width: 100%;
-}
-
-.painel-sugestoes-busca {
-    position: absolute;
-    top: 45px;
-    left: 0;
-    width: 100%;
-    background-color: var(--bg-card);
-    border: 1px solid var(--borda);
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 105;
-}
-
-.item-sugestao {
-    padding: 8px;
-    cursor: pointer;
-    border-bottom: 1px solid var(--borda);
-}
-
-    .item-sugestao:hover {
-        background-color: var(--cor-botao);
-        color: white;
-    }
-
-.tags-naturezas {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-    .tags-naturezas li {
-        background-color: var(--cor-botao);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-.btn-remover-tag {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 0;
-    font-size: 0.85rem;
-}
-
-.botoes-acoes {
-    display: flex;
     gap: 10px;
-    margin-top: 15px;
-}
-
-.btn-secundario {
-    background: var(--cor-sucesso);
-}
-
-    .btn-secundario:hover {
-        background: #059669;
-    }
-
-.btn-perigo {
-    background: var(--cor-perigo);
-}
-
-    .btn-perigo:hover {
-        background: #dc2626;
-    }
-
-.sugestao-box {
-    background-color: var(--bg-card);
-    border: 2px solid var(--cor-botao);
+    padding: 20px;
+    background-color: var(--fundo-preview, #fdfdfd);
+    border: 2px dashed #b3d7ff;
     border-radius: 8px;
-    padding: 15px;
-    margin-top: 20px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    min-height: 60px;
+    align-items: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.input-group-dinamico {
-    margin-bottom: 15px;
+/* Modo Noturno para o Grid se aplicável */
+[data-theme="dark"] .despacho-preview-grid {
+    background-color: #1e2530;
+    border-color: #3b4b61;
+}
+
+/* Blocos de Frases Arrastáveis (Contornos claros de início/fim) */
+.bloco-frase-arrastavel {
+    background-color: #f0f4f8;
+    color: #333;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid #d0d7de;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+    .bloco-frase-arrastavel:active {
+        cursor: grabbing;
+    }
+
+    /* Destaque para o item que está sendo CRIADO pelo usuário no momento */
+    .bloco-frase-arrastavel.item-criacao {
+        background-color: #28a745;
+        color: #ffffff;
+        border-color: #1e7e34;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.25);
+    }
+
+/* Fantasma (Indicador visual de onde o bloco vai cair no Snap) */
+.sortable-ghost {
+    opacity: 0.3;
+    background-color: #007bff !important;
+    border: 2px dashed #0056b3 !important;
+    color: transparent !important;
+}
+
+/* Estilização auxiliar para o bloco de ajuda/dicas */
+#dicaPlaceholder {
+    font-size: 12px;
+    font-style: italic;
+    background-color: rgba(255, 152, 0, 0.1);
+    padding: 6px 10px;
+    border-left: 3px solid #ff9800;
+    border-radius: 0 4px 4px 0;
 }

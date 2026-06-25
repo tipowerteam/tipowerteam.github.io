@@ -25,6 +25,40 @@
             .toast-copia.visivel {
                 opacity: 1;
             }
+
+        /* Estilos auxiliares para a área de Grid & Snap do Preview */
+        .despacho-preview-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 15px;
+            background: var(--fundo-bloco, #f9f9f9);
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            min-height: 50px;
+        }
+
+        .bloco-frase-arrastavel {
+            background: #007bff;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: grab;
+            user-select: none;
+            font-size: 14px;
+            border: 1px solid #0056b3;
+        }
+
+            .bloco-frase-arrastavel.item-criacao {
+                background: #28a745;
+                border-color: #1e7e34;
+            }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            border: 2px dashed #000;
+        }
     </style>
 </head>
 <body>
@@ -85,12 +119,12 @@
 
             <div id="blocoNomeDropdownNovo" style="display: none;">
                 <label for="regNomeDropdownNovo">Nome do Dropdown:</label>
-                <input type="text" id="regNomeDropdownNovo" placeholder="Ex: Tipo de Arma">
+                <input type="text" id="regNomeDropdownNovo" placeholder="Ex: Tipo de Arma" oninput="atualizarPreviewInline()">
             </div>
 
             <div id="blocoDropdownExistente" style="display: none;">
                 <label for="regDropdownMae">Selecione o Dropdown Alvo:</label>
-                <select id="regDropdownMae">
+                <select id="regDropdownMae" onchange="atualizarPreviewInline()">
                     <option value="">Escolha o grupo...</option>
                 </select>
             </div>
@@ -103,10 +137,15 @@
             <div id="blocoTextoOutput">
                 <label for="regTextoOutput">Texto a ser gerado no 'Resultado do Despacho':</label>
                 <input type="text" id="regTextoOutput" placeholder="Escreva a frase base do despacho..." oninput="atualizarPreviewInline()">
-                <p id="dicaPlaceholder" class="subtitulo" style="color: var(--cor-destaque); margin-bottom: 10px; display:none;"></p>
+                <p id="dicaPlaceholder" class="subtitulo" style="color: #ff9800; margin-bottom: 10px; display:none;"></p>
             </div>
 
-            <fieldset class="secao-naturezas-inline">
+            <div id="blocoOrdenacaoPreview" style="margin-top: 15px;">
+                <label><strong>Posicione a frase abaixo para determinar a Prioridade (Arraste no Grid):</strong></label>
+                <div id="zonaPreviewArrastavel" class="despacho-preview-grid"></div>
+            </div>
+
+            <fieldset class="secao-naturezas-inline" style="margin-top: 15px;">
                 <legend>Vincular a quais Naturezas?</legend>
                 <div class="autocomplete-container">
                     <input type="text" id="buscaNatureza" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Digite para buscar uma natureza...">
@@ -126,8 +165,6 @@
 
     <h2>Resultado do Despacho</h2>
 
-    <div id="zonaPreviewArrastavel" class="despacho-preview-grid" style="display: none;"></div>
-
     <textarea id="resultado" placeholder="O resultado do despacho aparecerá aqui..." readonly></textarea>
 
     <div class="botoes-acoes">
@@ -143,6 +180,7 @@
     <div id="toastCopia" class="toast-copia">Texto copiado com sucesso!</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
