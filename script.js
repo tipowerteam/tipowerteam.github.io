@@ -7,6 +7,7 @@ let dadosNaturezas = [];
 let perguntasDaCategoriaAtual = [];
 let listaMapeadaNaturezasCopom = [];
 let naturezasVinculadasNoPainel = [];
+let ordemFicticiaAoArrastar = 10; // Ordem dinâmica capturada do Grid-Snap Inline
 
 window.onload = async () => {
     if (localStorage.getItem("theme") === "dark") {
@@ -22,10 +23,7 @@ window.onload = async () => {
     selectNatureza.addEventListener("change", (e) => {
         if (e.target.value !== "") {
             const primeiraOpcao = e.target.options[0];
-            if (primeiraOpcao && primeiraOpcao.value === "") {
-                primeiraOpcao.remove();
-            }
-            // Exibe o botão de criar perguntas apenas se houver categoria ativa
+            if (primeiraOpcao && primeiraOpcao.value === "") primeiraOpcao.remove();
             document.getElementById("areaBotaoNovaOpcao").style.display = "block";
         } else {
             document.getElementById("areaBotaoNovaOpcao").style.display = "none";
@@ -58,10 +56,69 @@ function alternarTema() {
     }
 }
 
-// CONTROLADORES DE INTERFACE INLINE (TELA PRINCIPAL)
-function exibirFormCriarCategoria() {
-    document.getElementById("areaCriarCategoria").style.display = "block";
+// CONTROLADORES DO NOVO FLUXO DE REGISTRO CONDICIONAL
+function configurarFluxoRegistro() {
+    const tipo = document.getElementById("regTipoCampo").value;
+    const container = document.getElementById("containerPassosDinamicos");
+    const labelNome = document.getElementById("labelNomeCampoGeral");
+    const inputNome = document.getElementById("regNomeCampo");
+    const dicaPlaceholder = document.getElementById("dicaPlaceholder");
+
+    if (!tipo) {
+        container.style.display = "none";
+        return;
+    }
+
+    container.style.display = "block";
+    document.getElementById("zonaPreviewArrastavel").style.display = "flex"; // Liga grid interativo
+
+    // Reset de visibilidade padrão dos blocos internos
+    document.getElementById("blocoSubtipoDropdown").style.display = "none";
+    document.getElementById("blocoNomeDropdownNovo").style.display = "none";
+    document.getElementById("blocoDropdownExistente").style.display = "none";
+    document.getElementById("blocoNomeCampoGeral").style.display = "block";
+    dicaPlaceholder.style.display = "none";
+
+    if (tipo === "bool") {
+        labelNome.textContent = "Nome/Título da Opção (Toggle):";
+        inputNome.placeholder = "Ex: Com fone conectado";
+    } else if (tipo === "integer") {
+        labelNome.textContent = "Nome/Título da Opção (Integer):";
+        inputNome.placeholder = "Ex: Quantidade de suspeitos";
+        dicaPlaceholder.textContent = "Dica: Use {valor} para onde entrará o número. Ex: HÁ APROXIMADAMENTE {valor} NO LOCAL";
+        dicaPlaceholder.style.display = "block";
+    } else if (tipo === "inputfield") {
+        labelNome.textContent = "Nome/Título do Campo (Inputfield):";
+        inputNome.placeholder = "Ex: Nome da Rua";
+        dicaPlaceholder.textContent = "Dica: Use {valor} para onde entrará o texto digitado. Ex: SE DESLOCANDO ATÉ A {valor}";
+        dicaPlaceholder.style.display = "block";
+    } else if (tipo === "dropdown") {
+        document.getElementById("blocoSubtipoDropdown").style.display = "block";
+        configurarSubtipoDropdown();
+    }
+    atualizarPreviewInline();
 }
+
+function configurarSubtipoDropdown() {
+    const sub = document.getElementById("regSubtipoDropdown").value;
+    const labelNome = document.getElementById("labelNomeCampoGeral");
+    const inputNome = document.getElementById("regNomeCampo");
+
+    if (sub === "novo") {
+        document.getElementById("blocoNomeDropdownNovo").style.display = "block";
+        document.getElementById("blocoDropdownExistente").style.display = "none";
+        labelNome.textContent = "Primeira Opção deste Dropdown:";
+        inputNome.placeholder = "Ex: Faca de Cozinha";
+    } else {
+        document.getElementById("blocoNomeDropdownNovo").style.display = "none";
+        document.getElementById("blocoDropdownExistente").style.display = "block";
+        labelNome.textContent = "Título / Nova Opção Selecionável:";
+        inputNome.placeholder = "Ex: Revólver Calibre 38";
+        atualizarDropdownsExistentesDaCategoriaInline();
+    }
+}
+
+function exibirFormCriarCategoria() { document.getElementById("areaCriarCategoria").style.display = "block"; }
 function fecharFormCriarCategoria() {
     document.getElementById("areaCriarCategoria").style.display = "none";
     document.getElementById("newCatNome").value = "";
@@ -69,11 +126,13 @@ function fecharFormCriarCategoria() {
 
 function exibirFormCriarOpcao() {
     document.getElementById("areaCriarOpcao").style.display = "block";
-    atualizarDropdownsExistentesDaCategoriaInline();
-    atualizarPreviewInline();
+    document.getElementById("regTipoCampo").value = "";
+    document.getElementById("containerPassosDinamicos").style.display = "none";
 }
+
 function fecharFormCriarOpcao() {
     document.getElementById("areaCriarOpcao").style.display = "none";
+    document.getElementById("zonaPreviewArrastavel").style.display = "none";
     document.getElementById("regNomeCampo").value = "";
     document.getElementById("regTextoOutput").value = "";
     document.getElementById("regNomeDropdownNovo").value = "";
@@ -82,40 +141,24 @@ function fecharFormCriarOpcao() {
     atualizarTudo();
 }
 
-function alternarCamposRegistroInline() {
-    const tipo = document.getElementById("regTipoCampo").value;
-    document.getElementById("areaDropdownExistenteConfig").style.display = tipo === 'dropdown_existente' ? 'block' : 'none';
-    document.getElementById("areaDropdownNovoConfig").style.display = tipo === 'dropdown_novo' ? 'block' : 'none';
-}
-
 function abrirAtalhoDropdownExistente(perguntaId) {
     exibirFormCriarOpcao();
-    document.getElementById("regTipoCampo").value = "dropdown_existente";
-    alternarCamposRegistroInline();
-    setTimeout(() => {
-        document.getElementById("regDropdownMae").value = perguntaId;
-    }, 300);
+    document.getElementById("regTipoCampo").value = "dropdown";
+    configurarFluxoRegistro();
+    document.getElementById("regSubtipoDropdown").value = "existente";
+    configurarSubtipoDropdown();
+    setTimeout(() => { document.getElementById("regDropdownMae").value = perguntaId; }, 300);
 }
 
-// PREVIEW DINÂMICO EM TEMPO REAL DIRETAMENTE NO TEXTAREA DE OUTPUT
-function atualizarPreviewInline() {
-    gerarTextoDoBanco();
-}
+function atualizarPreviewInline() { gerarTextoDoBanco(); }
 
 async function atualizarDropdownsExistentesDaCategoriaInline() {
     const catId = document.getElementById("natureza").value;
     const selectDropdownsMap = document.getElementById("regDropdownMae");
     selectDropdownsMap.innerHTML = '<option value="">Carregando...</option>';
-
     if (!catId) return;
-
     try {
-        let { data } = await supabaseClient
-            .from('perguntas')
-            .select('id, nome_campo')
-            .eq('categoria_id', catId)
-            .eq('tipo_campo', 'dropdown');
-
+        let { data } = await supabaseClient.from('perguntas').select('id, nome_campo').eq('categoria_id', catId).eq('tipo_campo', 'dropdown');
         selectDropdownsMap.innerHTML = '<option value="">Escolha o grupo...</option>';
         if (data) {
             data.forEach(p => {
@@ -128,23 +171,73 @@ async function atualizarDropdownsExistentesDaCategoriaInline() {
     } catch (e) { console.error(e); }
 }
 
+// LÓGICA REFORMULADA DE DRAG, DROP E ARRASTO EM TEMPO REAL (GRID AND SNAP)
+function inicializarEventosDragAndDrop() {
+    const grid = document.getElementById("zonaPreviewArrastavel");
+    let itemArrastado = null;
+
+    grid.querySelectorAll(".bloco-frase-arrastavel").forEach(bloco => {
+        bloco.addEventListener("dragstart", () => {
+            itemArrastado = bloco;
+            bloco.classList.add("arrastando");
+        });
+
+        bloco.addEventListener("dragend", () => {
+            bloco.classList.remove("arrastando");
+            itemArrastado = null;
+            recalcularOrdemPorPosicaoFisica();
+        });
+    });
+
+    grid.addEventListener("dragover", e => {
+        e.preventDefault();
+        const aposElemento = obterElementoAposArrasto(grid, e.clientX);
+        if (aposElemento == null) {
+            grid.appendChild(itemArrastado);
+        } else {
+            grid.insertBefore(itemArrastado, aposElemento);
+        }
+    });
+}
+
+function obterElementoAposArrasto(grid, x) {
+    const elementosValidos = [...grid.querySelectorAll(".bloco-frase-arrastavel:not(.arrastando)")];
+    return elementosValidos.reduce((proximo, filho) => {
+        const box = filho.getBoundingClientRect();
+        const offset = x - box.left - box.width / 2;
+        if (offset < 0 && offset > proximo.offset) {
+            return { offset: offset, element: filho };
+        } else {
+            return proximo;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function recalcularOrdemPorPosicaoFisica() {
+    const blocos = [...document.querySelectorAll("#zonaPreviewArrastavel .bloco-frase-arrastavel")];
+    let indexCriacao = blocos.findIndex(b => b.classList.contains("item-criacao"));
+
+    // Calcula uma prioridade escalonada de 10 em 10 baseada na posição do grid
+    if (indexCriacao !== -1) {
+        ordemFicticiaAoArrastar = (indexCriacao + 1) * 10;
+    }
+
+    // Atualiza a visualização final do textarea com base na nova ordenação visual do arrasto
+    const historicoCompilado = blocos.map(b => b.getAttribute("data-texto")).join(" ");
+    renderizarMontagemFinalTexto(historicoCompilado);
+}
+
 // OPERAÇÕES DO BANCO DE DADOS (SUPABASE)
 async function salvarNovaCategoriaBanco() {
     const nomeCat = document.getElementById("newCatNome").value.trim();
-    if (!nomeCat) {
-        alert("Digite o nome da categoria!");
-        return;
-    }
+    if (!nomeCat) { alert("Digite o nome da categoria!"); return; }
     try {
         const { error } = await supabaseClient.from('categorias').insert([{ nome: nomeCat }]);
         if (error) throw error;
         alert("Categoria adicionada com sucesso!");
         fecharFormCriarCategoria();
         await carregarCategoriasDoBanco();
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao salvar categoria.");
-    }
+    } catch (e) { alert("Erro ao salvar categoria."); }
 }
 
 async function salvarNovoRegistroInline() {
@@ -152,115 +245,96 @@ async function salvarNovoRegistroInline() {
     const categoriaId = document.getElementById("natureza").value;
     const tipoCampo = document.getElementById("regTipoCampo").value;
     const textoOutput = document.getElementById("regTextoOutput").value.trim();
-    const ordem = parseInt(document.getElementById("regOrdem").value) || 10;
-
+    const ordemFinal = ordemFicticiaAoArrastar; // Capturado do arrasto na tela
     let nomeCampo = document.getElementById("regNomeCampo").value.trim();
 
-    if (tipoCampo === 'dropdown_novo') {
+    if (tipoCampo === 'dropdown' && document.getElementById("regSubtipoDropdown").value === 'novo') {
         nomeCampo = document.getElementById("regNomeDropdownNovo").value.trim();
     }
 
     if (!categoriaId || !nomeCampo || !textoOutput) {
-        alert("Preencha todos os campos obrigatórios para o registro!");
+        alert("Preencha todos os campos obrigatórios para salvar!");
         return;
     }
 
     try {
-        if (tipoCampo === 'bool' || tipoCampo === 'numero' || tipoCampo === 'texto') {
-            const { data: novaPerg, error: err } = await supabaseClient
-                .from('perguntas')
-                .insert([{
-                    categoria_id: categoriaId,
-                    nome_campo: nomeCampo,
-                    tipo_campo: tipoCampo,
-                    texto_output_true: tipoCampo === 'bool' ? textoOutput : null,
-                    ordem_contexto_true: tipoCampo === 'bool' ? ordem : null,
-                    texto_output_numero: tipoCampo === 'numero' ? textoOutput : null,
-                    ordem_contexto_numero: tipoCampo === 'numero' ? ordem : null,
-                    registrado_por: colaborador
-                }]).select();
+        if (tipoCampo === 'bool' || tipoCampo === 'integer' || tipoCampo === 'inputfield') {
+            // No seu banco mapeado, mapeamos integer para 'numero' e inputfield para 'texto'
+            const dbTipo = tipoCampo === 'integer' ? 'numero' : (tipoCampo === 'inputfield' ? 'texto' : 'bool');
+
+            const { data: novaPerg, error: err } = await supabaseClient.from('perguntas').insert([{
+                categoria_id: categoriaId,
+                nome_campo: nomeCampo,
+                tipo_campo: dbTipo,
+                texto_output_true: dbTipo !== 'numero' ? textoOutput : null,
+                ordem_contexto_true: dbTipo !== 'numero' ? ordemFinal : null,
+                texto_output_numero: dbTipo === 'numero' ? textoOutput : null,
+                ordem_contexto_numero: dbTipo === 'numero' ? ordemFinal : null,
+                registrado_por: colaborador
+            }]).select();
 
             if (err) throw err;
-
             for (const nId of naturezasVinculadasNoPainel) {
                 await supabaseClient.from('vinculos_pesos').insert([{ pergunta_id: novaPerg[0].id, natureza_id: nId }]);
             }
-
-        } else if (tipoCampo === 'dropdown_novo') {
-            const valorInicial = document.getElementById("regNomeCampo").value.trim() || "Padrão";
-            const { data: novaPerg, error: err } = await supabaseClient
-                .from('perguntas')
-                .insert([{
+        } else if (tipoCampo === 'dropdown') {
+            const sub = document.getElementById("regSubtipoDropdown").value;
+            if (sub === 'novo') {
+                const valorInicial = document.getElementById("regNomeCampo").value.trim() || "Padrão";
+                const { data: novaPerg, error: err } = await supabaseClient.from('perguntas').insert([{
                     categoria_id: categoriaId,
                     nome_campo: nomeCampo,
                     tipo_campo: 'dropdown',
                     registrado_por: colaborador
                 }]).select();
 
-            if (err) throw err;
-
-            const { data: novaOpt } = await supabaseClient
-                .from('opcoes_dropdown')
-                .insert([{
+                if (err) throw err;
+                const { data: novaOpt } = await supabaseClient.from('opcoes_dropdown').insert([{
                     pergunta_id: novaPerg[0].id,
                     valor_opcao: valorInicial,
                     texto_output: textoOutput,
-                    ordem_contexto: ordem,
+                    ordem_contexto: ordemFinal,
                     registrado_por: colaborador
                 }]).select();
 
-            for (const nId of naturezasVinculadasNoPainel) {
-                await supabaseClient.from('vinculos_pesos').insert([{ opcao_dropdown_id: novaOpt[0].id, natureza_id: nId }]);
-            }
+                for (const nId of naturezasVinculadasNoPainel) {
+                    await supabaseClient.from('vinculos_pesos').insert([{ opcao_dropdown_id: novaOpt[0].id, natureza_id: nId }]);
+                }
+            } else {
+                const perguntaIdMae = document.getElementById("regDropdownMae").value;
+                if (!perguntaIdMae) { alert("Selecione o dropdown alvo!"); return; }
 
-        } else if (tipoCampo === 'dropdown_existente') {
-            const perguntaIdMae = document.getElementById("regDropdownMae").value;
-            if (!perguntaIdMae) {
-                alert("Selecione o dropdown existente alvo!");
-                return;
-            }
-
-            const { data: novaOpt, error: err } = await supabaseClient
-                .from('opcoes_dropdown')
-                .insert([{
+                const { data: novaOpt, error: err } = await supabaseClient.from('opcoes_dropdown').insert([{
                     pergunta_id: perguntaIdMae,
-                    valor_opcao: nomeCampo, // No existente, o título inserido passa a ser o valor selecionável
+                    valor_opcao: nomeCampo,
                     texto_output: textoOutput,
-                    ordem_contexto: ordem,
+                    ordem_contexto: ordemFinal,
                     registrado_por: colaborador
                 }]).select();
 
-            if (err) throw err;
-
-            for (const nId of naturezasVinculadasNoPainel) {
-                await supabaseClient.from('vinculos_pesos').insert([{ opcao_dropdown_id: novaOpt[0].id, natureza_id: nId }]);
+                if (err) throw err;
+                for (const nId of naturezasVinculadasNoPainel) {
+                    await supabaseClient.from('vinculos_pesos').insert([{ opcao_dropdown_id: novaOpt[0].id, natureza_id: nId }]);
+                }
             }
         }
 
-        alert("Opção registrada diretamente no sistema com sucesso!");
+        alert("Opção salva e ordenada com sucesso!");
         fecharFormCriarOpcao();
         await atualizarCamposDoBanco();
-
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao salvar dados no Supabase.");
-    }
+    } catch (e) { console.error(e); }
 }
 
 async function baixarEGuardarTodasAsNaturezas() {
     try {
-        let { data, error } = await supabaseClient.from('naturezas_copom').select('id, natureza');
-        if (error) throw error;
+        let { data } = await supabaseClient.from('naturezas_copom').select('id, natureza');
         listaMapeadaNaturezasCopom = data || [];
-    } catch (err) { console.error(err); }
+    } catch (err) { }
 }
 
 function filtrarNaturezasAutocomplete(termoBusca) {
     const painel = document.getElementById("painelSugestoesInstantes");
-    if (!termoBusca || termoBusca.trim().length < 1) {
-        painel.style.display = "none";
-        return;
-    }
+    if (!termoBusca || termoBusca.trim().length < 1) { painel.style.display = "none"; return; }
     const termoLimpo = termoBusca.toUpperCase();
     const filtradas = listaMapeadaNaturezasCopom.filter(nat => nat.natureza && nat.natureza.toUpperCase().includes(termoLimpo));
 
@@ -301,20 +375,17 @@ function renderizarTagsNaturezas() {
 
 async function carregarCategoriasDoBanco() {
     try {
-        let { data, error } = await supabaseClient.from('categorias').select('*').order('id', { ascending: true });
-        if (error) throw error;
+        let { data } = await supabaseClient.from('categorias').select('*').order('id', { ascending: true });
         dadosNaturezas = data || [];
-
         const selectPrincipal = document.getElementById("natureza");
         selectPrincipal.innerHTML = '<option value="">Selecione a Categoria...</option>';
-
         dadosNaturezas.forEach(cat => {
             const option = document.createElement("option");
             option.value = cat.id;
             option.textContent = cat.nome;
             selectPrincipal.appendChild(option);
         });
-    } catch (erro) { console.error(erro); }
+    } catch (erro) { }
 }
 
 async function atualizarCamposDoBanco() {
@@ -324,19 +395,10 @@ async function atualizarCamposDoBanco() {
     document.getElementById("painelSugestoes").style.display = "none";
     document.getElementById("resultado").value = "";
 
-    if (!categoriaId) {
-        perguntasDaCategoriaAtual = [];
-        return;
-    }
+    if (!categoriaId) { perguntasDaCategoriaAtual = []; return; }
 
     try {
-        let { data: perguntas, error: errP } = await supabaseClient
-            .from('perguntas')
-            .select('*')
-            .eq('categoria_id', categoriaId)
-            .order('id', { ascending: true });
-
-        if (errP) throw errP;
+        let { data: perguntas } = await supabaseClient.from('perguntas').select('*').eq('categoria_id', categoriaId).order('id', { ascending: true });
         perguntasDaCategoriaAtual = perguntas || [];
 
         for (let campo of perguntasDaCategoriaAtual) {
@@ -344,7 +406,6 @@ async function atualizarCamposDoBanco() {
                 let { data: opcoes } = await supabaseClient.from('opcoes_dropdown').select('*').eq('pergunta_id', campo.id);
                 campo.opcoes_dropdown = opcoes || [];
             }
-
             let { data: vPesos } = await supabaseClient.from('vinculos_pesos').select('natureza_id, naturezas_copom(natureza)').eq('pergunta_id', campo.id);
             campo.vinculos_pesos = vPesos || [];
 
@@ -358,10 +419,8 @@ async function atualizarCamposDoBanco() {
             const divGroup = document.createElement("div");
             divGroup.className = "input-group-dinamico";
             const id = gerarId(campo.nome_campo);
-
             const labelContainer = document.createElement("div");
             labelContainer.className = "header-container-opcao";
-
             const label = document.createElement("label");
             label.textContent = campo.nome_campo;
             label.htmlFor = id;
@@ -371,11 +430,7 @@ async function atualizarCamposDoBanco() {
                 const btnAdd = document.createElement("button");
                 btnAdd.className = "btn-atalho-add";
                 btnAdd.textContent = "➕ Adicionar Opção";
-                // Corrigido aqui: Aponta perfeitamente para a nova função inline da tela principal
-                btnAdd.onclick = (e) => {
-                    e.preventDefault();
-                    abrirAtalhoDropdownExistente(campo.id);
-                };
+                btnAdd.onclick = (e) => { e.preventDefault(); abrirAtalhoDropdownExistente(campo.id); };
                 labelContainer.appendChild(btnAdd);
             }
 
@@ -393,13 +448,7 @@ async function atualizarCamposDoBanco() {
                         select.appendChild(option);
                     });
                 }
-                select.addEventListener("change", (e) => {
-                    if (e.target.value !== "") {
-                        const primeiraOpcao = e.target.options[0];
-                        if (primeiraOpcao && primeiraOpcao.value === "") primeiraOpcao.remove();
-                    }
-                    atualizarTudo();
-                });
+                select.addEventListener("change", () => { atualizarTudo(); });
                 divGroup.appendChild(select);
             }
 
@@ -420,10 +469,9 @@ async function atualizarCamposDoBanco() {
                 input.addEventListener("input", atualizarTudo);
                 divGroup.appendChild(input);
             }
-
             container.appendChild(divGroup);
         }
-    } catch (erro) { console.error(erro); }
+    } catch (erro) { }
 }
 
 function calcularProbabilidadesDoBanco() {
@@ -477,7 +525,7 @@ function gerarTextoDoBanco() {
 
     let fragmentosFrase = [];
 
-    // 1. Coleta itens já marcados em tempo real na tela principal
+    // 1. Processa inputs existentes na tela
     perguntasDaCategoriaAtual.forEach(campo => {
         const id = gerarId(campo.nome_campo);
         const el = document.getElementById(id);
@@ -499,22 +547,44 @@ function gerarTextoDoBanco() {
         }
     });
 
-    // 2. Injeta dinamicamente a nova opção em criação para visualização imediata do atendente
+    // 2. Processa o Preview Dinâmico do novo campo em edição
     const areaOpcaoVisivel = document.getElementById("areaCriarOpcao").style.display === "block";
     const txtNovo = document.getElementById("regTextoOutput").value.trim();
-    const ordemNova = parseInt(document.getElementById("regOrdem").value) || 10;
     const tipoNovo = document.getElementById("regTipoCampo").value;
 
     if (areaOpcaoVisivel && txtNovo) {
         let placeholderTxt = txtNovo;
-        if (tipoNovo === 'numero' || tipoNovo === 'texto') {
+        if (tipoNovo === 'integer' || tipoNovo === 'inputfield') {
             placeholderTxt = txtNovo.includes("{valor}") ? txtNovo.replace("{valor}", "[VALOR]") : `${txtNovo} [VALOR]`;
         }
-        fragmentosFrase.push({ texto: `<< CRIAÇÃO: ${placeholderTxt} >>`, ordem: ordemNova });
+        fragmentosFrase.push({ texto: placeholderTxt, ordem: 999, ehCriacao: true });
     }
 
+    // Ordena inicialmente por dados cadastrados
     fragmentosFrase.sort((a, b) => a.ordem - b.ordem);
+
+    // Renderiza blocos no Grid de Arrastar e Soltar
+    const gridArrastavel = document.getElementById("zonaPreviewArrastavel");
+    gridArrastavel.innerHTML = "";
+
+    fragmentosFrase.forEach(frag => {
+        const bloco = document.createElement("div");
+        bloco.className = "bloco-frase-arrastavel" + (frag.ehCriacao ? " item-criacao" : "");
+        bloco.draggable = true;
+        bloco.textContent = frag.texto;
+        bloco.setAttribute("data-texto", frag.texto);
+        gridArrastavel.appendChild(bloco);
+    });
+
+    inicializarEventosDragAndDrop();
+
     const historicoCompilado = fragmentosFrase.map(f => f.texto).join(" ");
+    renderizarMontagemFinalTexto(historicoCompilado);
+}
+
+function renderizarMontagemFinalTexto(historicoCompilado) {
+    const selectCat = document.getElementById("natureza");
+    const categoriaTexto = selectCat.options[selectCat.selectedIndex]?.text || "";
 
     let textoFinal = `=== REGISTRO DE OCORRÊNCIA COPOM ===\n`;
     textoFinal += `CATEGORIA: ${categoriaTexto}\n`;
@@ -547,6 +617,4 @@ async function limparPagina() {
     await carregarCategoriasDoBanco();
 }
 
-function gerarId(texto) {
-    return texto.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/__+/g, "_");
-}
+function gerarId(texto) { return texto.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/__+/g, "_"); }

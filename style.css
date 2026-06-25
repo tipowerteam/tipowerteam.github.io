@@ -101,7 +101,6 @@ button {
         color: var(--cor-botao-hover);
     }
 
-/* Boxes Inline de Registro na própria Tela Principal */
 .box-registro-inline {
     background-color: var(--bg-admin);
     border: 2px dashed var(--cor-destaque);
@@ -130,6 +129,40 @@ button {
     .btn-perigo-outline:hover {
         background: var(--cor-perigo);
         color: white;
+    }
+
+/* GRID COMPARTIMENTADO SNAP/DRAG DO TEXTO DE SAÍDA */
+.despacho-preview-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 15px;
+    background-color: var(--bg-card);
+    border: 2px dashed var(--cor-botao);
+    border-radius: 6px;
+    margin-bottom: 15px;
+    min-height: 60px;
+}
+
+.bloco-frase-arrastavel {
+    background-color: var(--bg-principal);
+    border: 1px solid var(--borda);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: move;
+    user-select: none;
+    font-weight: 500;
+    transition: transform 0.1s ease, border-color 0.2s;
+}
+
+    .bloco-frase-arrastavel.arrastando {
+        opacity: 0.4;
+        border-color: var(--cor-destaque);
+    }
+
+    .bloco-frase-arrastavel.item-criacao {
+        border: 2px solid var(--cor-destaque);
+        background-color: rgba(245, 158, 11, 0.1);
     }
 
 .secao-naturezas-inline {
