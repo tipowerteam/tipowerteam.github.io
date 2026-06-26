@@ -75,7 +75,7 @@ body {
     display: flex;
     flex: 1;
     padding: 25px;
-    gap: 0; /* Controlado estritamente pela barra separadora */
+    gap: 0;
     align-items: flex-start;
     max-width: 100vw;
     width: 100%;
@@ -91,13 +91,16 @@ body {
     width: 100%;
 }
 
-/* COLUNA ESQUERDA: Configuração fluida e travada contra esmagamentos */
+/* COLUNA ESQUERDA: Fixa em Viewport e Scroll Dinâmico Interno */
 .coluna-despacho-esquerda {
     flex: 0 0 auto;
-    width: 440px; /* Largura inicial estável */
+    width: 440px;
     min-width: 320px;
     position: sticky;
     top: 25px;
+    max-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
 }
 
 .card-fixo-resultado {
@@ -105,6 +108,7 @@ body {
     flex-direction: column;
     gap: 15px;
     width: 100%;
+    max-height: 100%;
 }
 
     .card-fixo-resultado h2 {
@@ -115,7 +119,9 @@ body {
 
 .textarea-wrapper {
     width: 100%;
+    flex: 1;
     display: flex;
+    min-height: 200px;
 }
 
 #resultado {
@@ -123,9 +129,7 @@ body {
     width: 100%;
     min-width: 100%;
     max-width: 100%;
-    min-height: 180px;
-    height: auto;
-    max-height: 75vh;
+    height: 320px;
     padding: 14px;
     background-color: var(--bg-fundo);
     color: var(--texto-principal);
@@ -133,13 +137,63 @@ body {
     border-radius: 6px;
     font-size: 15px;
     line-height: 1.6;
-    resize: none; /* CORREÇÃO: resize removido do textarea para evitar quebras nativas */
+    resize: none;
     box-sizing: border-box;
     transition: background-color 0.3s;
-    overflow-y: hidden;
+    overflow-y: auto; /* Força scroll vertical quando estoura o limite visual */
 }
 
-/* BARRA SEPARADORA DINÂMICA (DRAG SPLITTER) */
+/* Painel do Autocomplete Dinâmico */
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.painel-sugestoes-busca {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-card);
+    border: 1px solid var(--cor-borda);
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 150;
+    border-radius: 0 0 6px 6px;
+    box-shadow: var(--shadow);
+}
+
+.sugestao-item-busca:hover {
+    background-color: var(--cor-primaria) !important;
+    color: #fff !important;
+}
+
+.tags-naturezas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin-top: 8px;
+}
+
+    .tags-naturezas li {
+        background-color: rgba(37, 99, 235, 0.12);
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+    }
+
+.txt-identificador-escopo {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 10px;
+    color: var(--texto-secundario);
+}
+
+/* BARRA SEPARADORA DINÂMICA */
 .resizer-barra {
     width: 16px;
     align-self: stretch;
@@ -153,7 +207,7 @@ body {
     .resizer-barra:hover, .resizer-barra:active {
         background-color: rgba(37, 99, 235, 0.15);
     }
-    /* Linha interna visual discreta */
+
     .resizer-barra::after {
         content: "";
         position: absolute;
@@ -174,7 +228,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    min-width: 350px; /* Garante usabilidade mínima para as opções */
+    min-width: 350px;
     padding-left: 10px;
 }
 
@@ -248,21 +302,16 @@ button {
 
 .btn-principal {
     background-color: var(--cor-primaria);
-    color: #ffffff;
+    color: #fff;
 }
 
     .btn-principal:hover {
         background-color: var(--cor-primaria-hover);
     }
 
-.btn-secundario {
-    background-color: var(--texto-secundario);
-    color: #ffffff;
-}
-
 .btn-perigo {
     background-color: var(--cor-perigo);
-    color: #ffffff;
+    color: #fff;
 }
 
     .btn-perigo:hover {
@@ -271,61 +320,90 @@ button {
 
 .btn-perigo-outline {
     background-color: transparent;
-    border: 1px solid var(--cor-perigo);
     color: var(--cor-perigo);
+    border: 1px solid var(--cor-perigo);
+}
+
+.btn-secundario {
+    background-color: var(--cor-sucesso);
+    color: #fff;
+}
+
+.botoes-acoes, .botoes-inline {
+    display: flex;
+    gap: 10px;
 }
 
 .header-container-opcao {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .btn-atalho-add {
     padding: 4px 8px;
     font-size: 11px;
-    background-color: rgba(37, 99, 235, 0.1);
-    color: var(--cor-primaria);
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--cor-sucesso);
 }
 
-.botoes-inline, .botoes-acoes {
+.checkbox-container {
     display: flex;
-    gap: 10px;
-}
-
-.grid-campos-reordenaveis {
-    display: grid;
-    grid-template-columns: 100%;
-    gap: 15px;
-}
-
-.input-group-dinamico {
-    background-color: var(--bg-card);
-    border: 1px solid var(--cor-borda);
-    border-radius: var(--radius);
-    padding: 15px;
-    box-shadow: var(--shadow);
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
 }
 
 .toast-copia {
     position: fixed;
     bottom: 20px;
-    right: 20px;
-    background-color: var(--cor-sucesso);
-    color: white;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--texto-principal);
+    color: var(--bg-card);
     padding: 12px 24px;
-    border-radius: 6px;
+    border-radius: 30px;
     font-size: 14px;
-    font-weight: 500;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
     box-shadow: var(--shadow);
-    z-index: 999;
+    transition: transform 0.3s ease;
+    z-index: 1000;
 }
 
     .toast-copia.show {
-        opacity: 1;
-        visibility: visible;
+        transform: translateX(-50%) translateY(0);
     }
+
+.flex-row-fit {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.radio-group {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.secao-naturezas-inline {
+    border: 1px dashed var(--cor-borda);
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+}
+
+    .secao-naturezas-inline legend {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 0 6px;
+    }
+
+.input-group-dinamico {
+    background-color: var(--bg-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
