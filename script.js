@@ -40,23 +40,37 @@ window.onload = async () => {
 
     const txtResultado = document.getElementById("resultado");
     const colEsquerda = document.getElementById("colunaDespachoEsquerda");
-    const painelSugestoes = document.getElementById("painelSugestoes");
+    const resizer = document.getElementById("resizerBarra");
 
-    // Sincroniza dinamicamente a largura dos containers de sugestão e do wrapper esquerdo
-    if (window.ResizeObserver) {
-        const ro = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                const larguraCalculada = entry.rect ? entry.rect.width : entry.contentRect.width;
-                if (larguraCalculada > 10) {
-                    colEsquerda.style.width = (larguraCalculada + 2) + "px";
-                    if (painelSugestoes) {
-                        painelSugestoes.style.width = "100%";
-                    }
-                }
-            }
-        });
-        ro.observe(txtResultado);
-    }
+    // CORREÇÃO DEFINITIVA: Lógica de split-drag manual estável por mouse/touch
+    let isDragging = false;
+
+    resizer.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none"; // Evita seleção acidental de textos
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+
+        // Calcula a nova largura baseada na posição X do ponteiro
+        let novaLargura = e.clientX - colEsquerda.getBoundingClientRect().left;
+
+        // Limita os tamanhos máximos e mínimos para proteção do layout
+        const larguraMaxPermitida = window.innerWidth * 0.55; // Máximo 55% da tela
+        if (novaLargura >= 320 && novaLargura <= larguraMaxPermitida) {
+            colEsquerda.style.width = novaLargura + "px";
+        }
+    });
+
+    document.addEventListener("mouseup", () => {
+        if (isDragging) {
+            isDragging = false;
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        }
+    });
 
     const grid = document.getElementById("zonaPreviewArrastavel");
     sortableInstance = new Sortable(grid, {
@@ -89,7 +103,11 @@ window.onload = async () => {
 
 async function carregarCategoriasDoBanco() {
     try {
-        const { data, error } = await supabaseClient.from('categorias').select('id, nome').order('nome', { ascending: true });
+        const { data, error } = await supabaseClient
+            .from('categorias')
+            .select('id, nome')
+            .order('id', { ascending: true });
+
         const select = document.getElementById("natureza");
         if (error) throw error;
 
@@ -110,9 +128,15 @@ async function carregarCategoriasDoBanco() {
     }
 }
 
+function ajustarAlturaTextarea(elemento) {
+    if (!elemento) return;
+    elemento.style.height = "auto";
+    elemento.style.height = elemento.scrollHeight + "px";
+}
+
 async function baixarEGuardarTodasAsNaturezas() {
     try {
-        const { data, error } = await supabaseClient.from('naturezas_copom').select('id, natureza');
+        const { data, error } = await supabaseClient.from('naturezas_copom').select('id, naturaleza');
         if (!error && data) listaMapeadaNaturezasCopom = data;
     } catch (e) { console.error(e); }
 }
@@ -216,15 +240,6 @@ function alternarModoEdicao() {
         sortableCamposInstance.option("disabled", true);
     }
     renderizarCamposDinamicosFormulario();
-}
-
-function ajustarAlturaTextarea(elemento) {
-    if (!elemento) return;
-    // Salva a largura definida pelo usuário antes do reset de altura
-    const larguraSalva = elemento.style.width;
-    elemento.style.height = "auto";
-    elemento.style.height = elemento.scrollHeight + "px";
-    if (larguraSalva) elemento.style.width = larguraSalva;
 }
 
 function gerarId(nome) {
