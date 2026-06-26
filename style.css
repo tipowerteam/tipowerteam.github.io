@@ -47,10 +47,16 @@ hr {
     margin: 20px 0;
 }
 
-.logo {
+/* BARRA SUPERIOR DE CONTROLES ESQUERDA */
+.barra-superior-controles {
     display: flex;
-    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 15px;
     align-items: center;
+}
+
+.logo {
+    margin-bottom: 10px;
 }
 
 .subtitulo {
@@ -59,7 +65,28 @@ hr {
     margin: 5px 0;
 }
 
-/* BLOCOS E LAYOUT */
+/* NOVO LAYOUT LAYOUT SEMI-FLEXÍVEL (SPLIT-SCREEN) */
+.layout-container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.coluna-esquerda {
+    flex: 1; /* Dinâmico: Alarga e encolhe ocupando o espaço restante */
+    min-width: 450px;
+    transition: width 0.3s ease;
+}
+
+.coluna-direita {
+    width: 400px; /* Largura idêntica e combinada para Textarea e Sugestões */
+    position: sticky;
+    top: 20px;
+    flex-shrink: 0; /* Impede que encolha */
+}
+
+/* BLOCOS E COMPONENTES */
 .bloco-contextual, .box-registro-inline, .input-group-dinamico, .sugestao-box {
     background-color: var(--fundo-bloco);
     border: 1px solid var(--cor-borda);
@@ -98,9 +125,17 @@ input[type="text"], input[type="number"], select, textarea {
     font-size: 14px;
 }
 
-textarea {
-    height: 100px;
-    resize: vertical;
+    /* TEXTAREA CONFIGURADO PARA MANUAL E AUTO-EXPANSÃO COORDENADOS */
+    textarea id="resultado" {
+        min-height: 120px;
+        overflow-y: hidden; /* Oculta a barra de rolagem interna quando expande automaticamente */
+        resize: both; /* Permite redimensionamento manual horizontal e vertical */
+    }
+
+/* MODO EDIÇÃO ATIVADO VISUALMENTE */
+.modo-edicao-ativo .input-group-dinamico {
+    border: 2px dashed orange !important;
+    cursor: move;
 }
 
 /* BOTÕES */
@@ -189,37 +224,49 @@ button {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
+    margin-top: 8px;
 }
 
-/* GRID E ARRASTE PREVIEW */
+.btn-remover-tag {
+    background: none;
+    padding: 0 4px;
+    color: var(--cor-perigo);
+    font-weight: bold;
+}
+
+/* CORREÇÃO DO BUG VISUAL: FILHOS INLINE-BLOCK SEM REFORÇO EXTRA DE ESPAÇO */
 .despacho-preview-grid {
     display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
-    gap: 10px;
-    padding: 20px;
+    gap: 8px;
+    padding: 15px;
     background-color: var(--fundo-preview);
     border: 2px dashed #b3d7ff;
     border-radius: 8px;
     margin-top: 10px;
-    margin-bottom: 20px;
-    min-height: 60px;
+    margin-bottom: 10px;
+    min-height: 50px;
     align-items: center;
 }
 
-[data-theme="dark"] .despacho-preview-grid {
-    border-color: #3b4b61;
-}
-
+/* CORREÇÃO VISUAL: Bloquinhos com tamanho estrito ao conteúdo de texto */
 .bloco-frase-arrastavel {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    max-width: max-content;
+    white-space: nowrap;
     background-color: var(--fundo-geral);
     color: var(--texto-principal);
-    padding: 8px 14px;
+    padding: 6px 12px;
     border-radius: 6px;
     border: 1px solid var(--cor-borda);
     font-size: 13px;
     font-weight: 500;
     cursor: grab;
     user-select: none;
+    box-sizing: border-box;
 }
 
     .bloco-frase-arrastavel.item-criacao {
@@ -228,6 +275,12 @@ button {
         border-color: #1e7e34;
         font-weight: bold;
     }
+
+.instrucoes-preview {
+    font-size: 11px;
+    color: var(--texto-secundario);
+    margin-bottom: 4px;
+}
 
 .sortable-ghost {
     opacity: 0.3;

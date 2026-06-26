@@ -9,6 +9,11 @@ let listaMapeadaNaturezasCopom = [];
 let naturezasVinculadasNoPainel = [];
 let ordemFicticiaAoArrastar = 10;
 let sortableInstance = null;
+let sortableCamposInstance = null;
+
+// Estados de controle local novos
+let modoEdicaoAtivo = false;
+let idSendoEditado = null;
 
 window.onload = async () => {
     if (localStorage.getItem("theme") === "dark") {
@@ -25,7 +30,7 @@ window.onload = async () => {
         if (e.target.value !== "") {
             const primeiraOpcao = e.target.options[0];
             if (primeiraOpcao && primeiraOpcao.value === "") primeiraOpcao.remove();
-            document.getElementById("areaBotaoNovaOpcao").style.display = "block";
+            document.getElementById("areaBotaoNovaOpcao").style.display = "inline-block";
         } else {
             document.getElementById("areaBotaoNovaOpcao").style.display = "none";
             fecharFormCriarOpcao();
@@ -41,14 +46,29 @@ window.onload = async () => {
             recalcularOrdemPorPosicaoFisica();
         }
     });
+
+    // Inicializa reordenador físico dos campos em Modo Edição
+    const containerCampos = document.getElementById("camposDinamicos");
+    sortableCamposInstance = new Sortable(containerCampos, {
+        animation: 150,
+        handle: '.input-group-dinamico',
+        disabled: true, // Desativado por padrão, só ativa no Modo Edição
+        onEnd: function () {
+            console.log("Campos reordenados visualmente na página.");
+        }
+    });
+
+    ajustarAlturaTextarea(document.getElementById("resultado"));
 };
 
 let timeout;
 function atualizarTudo() {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
+        verificarRegrasOcultamento(); // Processa dependências "Oculto Até"
         calcularProbabilidadesDoBanco();
         gerarTextoDoBanco();
+        ajustarAlturaTextarea(document.getElementById("resultado"));
     }, 200);
 }
 
@@ -66,6 +86,33 @@ function alternarTema() {
     }
 }
 
+function alternarModoEdicao() {
+    modoEdicaoAtivo = !modoEdicaoAtivo;
+    const btn = document.getElementById("btnModoEdicao");
+    const container = document.getElementById("camposDinamicos");
+
+    if (modoEdicaoAtivo) {
+        btn.textContent = "⚙️ Modo Edição: ON";
+        btn.style.backgroundColor = "orange";
+        btn.style.color = "black";
+        container.classList.add("modo-edicao-ativo");
+        sortableCamposInstance.option("disabled", false);
+        alert("Modo Edição Ativado! Clique no título de qualquer opção abaixo para editar seu texto/prioridade ou arraste os blocos inteiros para reordenar a página.");
+    } else {
+        btn.textContent = "⚙️ Modo Edição: OFF";
+        btn.style.backgroundColor = "";
+        btn.style.color = "";
+        container.classList.remove("modo-edicao-ativo");
+        sortableCamposInstance.option("disabled", true);
+    }
+}
+
+function ajustarAlturaTextarea(elemento) {
+    if (!elemento) return;
+    elemento.style.height = "auto";
+    elemento.style.height = elemento.scrollHeight + "px";
+}
+
 function gerarId(nome) {
     return "campo_" + nome.toLowerCase().replace(/[^a-z0-9]/g, "_");
 }
@@ -76,6 +123,7 @@ function configurarFluxoRegistro() {
     const labelNome = document.getElementById("labelNomeCampoGeral");
     const inputNome = document.getElementById("regNomeCampo");
     const dicaPlaceholder = document.getElementById("dicaPlaceholder");
+    const blocoRegraMaiorQue = document.getElementById("blocoRegraMaiorQue");
 
     if (!tipo) {
         container.style.display = "none";
@@ -83,12 +131,12 @@ function configurarFluxoRegistro() {
     }
 
     container.style.display = "block";
-
     document.getElementById("blocoSubtipoDropdown").style.display = "none";
     document.getElementById("blocoNomeDropdownNovo").style.display = "none";
     document.getElementById("blocoDropdownExistente").style.display = "none";
     document.getElementById("blocoNomeCampoGeral").style.display = "block";
     dicaPlaceholder.style.display = "none";
+    blocoRegraMaiorQue.style.display = "none";
 
     if (tipo === "bool") {
         labelNome.textContent = "Nome/Título da Opção (Toggle):";
@@ -96,17 +144,19 @@ function configurarFluxoRegistro() {
     } else if (tipo === "integer") {
         labelNome.textContent = "Nome/Título da Opção (Integer):";
         inputNome.placeholder = "Ex: Quantidade de suspeitos";
-        dicaPlaceholder.textContent = "Use {valor} para onde entrará o número. Ex: DESPACHO: SOLICITANTE INFORMA TER APROXIMADAMENTE {valor} NO LOCAL";
+        dicaPlaceholder.textContent = "Use {valor} para onde entrará o número.";
         dicaPlaceholder.style.display = "block";
+        blocoRegraMaiorQue.style.display = "block"; // Ativa regra maior que para integer
     } else if (tipo === "inputfield") {
         labelNome.textContent = "Nome/Título do Campo (Inputfield):";
         inputNome.placeholder = "Ex: Nome da Rua";
-        dicaPlaceholder.textContent = "Use {valor} para onde entrará o texto. Ex: DESPACHO: SOLICITANTE INFORMA QUE ESTÁ SE DESLOCANDO ATÉ A {valor}";
+        dicaPlaceholder.textContent = "Use {valor} para onde entrará o texto.";
         dicaPlaceholder.style.display = "block";
     } else if (tipo === "dropdown") {
         document.getElementById("blocoSubtipoDropdown").style.display = "block";
         configurarSubtipoDropdown();
     }
+    carregarDropdownOcultoAte();
     atualizarPreviewInline();
 }
 
@@ -130,6 +180,43 @@ function configurarSubtipoDropdown() {
     atualizarPreviewInline();
 }
 
+function carregarDropdownOcultoAte() {
+    const select = document.getElementById("regOcultoAte");
+    select.innerHTML = '<option value="">Sempre Visível</option>';
+    perguntasDaCategoriaAtual.forEach(p => {
+        if (idSendoEditado && p.id === idSendoEditado) return;
+        const opt = document.createElement("option");
+        opt.value = p.nome_campo;
+        opt.textContent = `Apenas se "${p.nome_campo}" ativo`;
+        select.appendChild(opt);
+    });
+}
+
+function atualizarCamposDuranteCriacaoLocal() {
+    atualizarPreviewInline();
+}
+
+function verificarRegrasOcultamento() {
+    perguntasDaCategoriaAtual.forEach(campo => {
+        const idCampoTarget = gerarId(campo.nome_campo);
+        const elementoDOM = document.getElementById(idCampoTarget)?.closest('.input-group-dinamico');
+
+        if (elementoDOM && campo.oculto_ate) {
+            const idOrigemDep = gerarId(campo.oculto_ate);
+            const elementoOrigem = document.getElementById(idOrigemDep);
+
+            let condicaoAtendida = false;
+            if (elementoOrigem) {
+                if (elementoOrigem.type === "checkbox" && elementoOrigem.checked) condicaoAtendida = true;
+                if ((elementoOrigem.type === "text" || elementoOrigem.tagName === "SELECT") && elementoOrigem.value !== "") condicaoAtendida = true;
+                if (elementoOrigem.type === "number" && elementoOrigem.value !== "") condicaoAtendida = true;
+            }
+
+            elementoDOM.style.display = condicaoAtendida ? "block" : "none";
+        }
+    });
+}
+
 function exibirFormCriarCategoria() { document.getElementById("areaCriarCategoria").style.display = "block"; }
 function fecharFormCriarCategoria() {
     document.getElementById("areaCriarCategoria").style.display = "none";
@@ -137,10 +224,15 @@ function fecharFormCriarCategoria() {
 }
 
 function exibirFormCriarOpcao() {
+    idSendoEditado = null;
+    document.getElementById("tituloFormOpcao").textContent = "📝 Registrar Opção / Pergunta";
+    document.getElementById("btnSalvarRegistro").textContent = "Salvar Registro no Banco";
     document.getElementById("areaCriarOpcao").style.display = "block";
     document.getElementById("regTipoCampo").value = "";
     document.getElementById("containerPassosDinamicos").style.display = "none";
-    atualizarPreviewInline();
+    document.getElementById("regQuebraLinha").checked = false;
+    document.getElementById("regValorMaiorQue").value = "";
+    configurarFluxoRegistro();
 }
 
 function fecharFormCriarOpcao() {
@@ -149,39 +241,77 @@ function fecharFormCriarOpcao() {
     document.getElementById("regTextoOutput").value = "";
     document.getElementById("regNomeDropdownNovo").value = "";
     document.getElementById("regTipoCampo").value = "";
+    document.getElementById("regQuebraLinha").checked = false;
+    document.getElementById("regValorMaiorQue").value = "";
+    idSendoEditado = null;
     naturezasVinculadasNoPainel = [];
     renderizarTagsNaturezas();
     atualizarTudo();
 }
 
-function abrirAtalhoDropdownExistente(perguntaId) {
-    exibirFormCriarOpcao();
-    document.getElementById("regTipoCampo").value = "dropdown";
+function iniciarEdicaoDeCampo(campoId) {
+    const campo = perguntasDaCategoriaAtual.find(p => p.id === campoId);
+    if (!campo) return;
+
+    idSendoEditado = campoId;
+    document.getElementById("tituloFormOpcao").textContent = `⚙️ Editando: ${campo.nome_campo}`;
+    document.getElementById("btnSalvarRegistro").textContent = "Atualizar Alterações";
+    document.getElementById("areaCriarOpcao").style.display = "block";
+
+    let tipoForm = "bool";
+    if (campo.tipo_campo === "numero") tipoForm = "integer";
+    if (campo.tipo_campo === "texto") tipoForm = "inputfield";
+    if (campo.tipo_campo === "dropdown") tipoForm = "dropdown";
+
+    document.getElementById("regTipoCampo").value = tipoForm;
     configurarFluxoRegistro();
-    document.getElementById("regSubtipoDropdown").value = "existente";
-    configurarSubtipoDropdown();
-    setTimeout(() => { document.getElementById("regDropdownMae").value = perguntaId; atualizarPreviewInline(); }, 300);
+
+    document.getElementById("regNomeCampo").value = campo.nome_campo;
+
+    if (tipoForm === "integer") {
+        document.getElementById("regTextoOutput").value = campo.texto_output_numero || "";
+        document.getElementById("regValorMaiorQue").value = campo.regra_maior_que || "";
+    } else if (tipoForm === "dropdown") {
+        document.getElementById("regSubtipoDropdown").value = "novo";
+        configurarSubtipoDropdown();
+        if (campo.opcoes_dropdown && campo.opcoes_dropdown.length > 0) {
+            document.getElementById("regNomeCampo").value = campo.opcoes_dropdown[0].valor_opcao;
+            document.getElementById("regTextoOutput").value = campo.opcoes_dropdown[0].texto_output || "";
+        }
+    } else {
+        document.getElementById("regTextoOutput").value = campo.texto_output_true || "";
+    }
+
+    document.getElementById("regOcultoAte").value = campo.oculto_ate || "";
+    document.getElementById("regQuebraLinha").checked = campo.forcar_quebra_linha || false;
+
+    atualizarPreviewInline();
 }
 
 function atualizarPreviewInline() {
     const grid = document.getElementById("zonaPreviewArrastavel");
-    const textoDigitado = document.getElementById("regTextoOutput").value.trim() || "(Frase do registro atual)";
+    let textoDigitado = document.getElementById("regTextoOutput").value.trim() || "(Frase do registro atual)";
+
+    if (document.getElementById("regQuebraLinha").checked) {
+        textoDigitado = "↩ " + textoDigitado;
+    }
 
     grid.innerHTML = "";
 
     perguntasDaCategoriaAtual.forEach(p => {
+        if (idSendoEditado && p.id === idSendoEditado) return;
+
         let textoExistente = "";
         if (p.tipo_campo === 'bool' || p.tipo_campo === 'texto') textoExistente = p.texto_output_true;
         if (p.tipo_campo === 'numero') textoExistente = p.texto_output_numero;
-
         if (p.tipo_campo === 'dropdown' && p.opcoes_dropdown && p.opcoes_dropdown.length > 0) {
             textoExistente = p.opcoes_dropdown[0].texto_output;
         }
 
         if (textoExistente) {
             const bloco = document.createElement("div");
-            bloco.className = "bloco-frase-arrastavel bloco-existente";
-            bloco.textContent = textoExistente.replace("{valor}", "[Exemplo]");
+            bloco.className = "bloco-frase-arrastavel";
+            bloco.textContent = (p.forcar_quebra_linha ? "↩ " : "") + textoExistente.replace("{valor}", "[Exemplo]");
             grid.appendChild(bloco);
         }
     });
@@ -198,12 +328,7 @@ function atualizarPreviewInline() {
 function recalcularOrdemPorPosicaoFisica() {
     const blocos = [...document.querySelectorAll("#zonaPreviewArrastavel .bloco-frase-arrastavel")];
     let indexCriacao = blocos.findIndex(b => b.id === "item_criacao_direta");
-
-    if (indexCriacao !== -1) {
-        ordemFicticiaAoArrastar = (indexCriacao + 1) * 10;
-    } else {
-        ordemFicticiaAoArrastar = 10;
-    }
+    ordemFicticiaAoArrastar = indexCriacao !== -1 ? (indexCriacao + 1) * 10 : 10;
 }
 
 async function atualizarDropdownsExistentesDaCategoriaInline() {
@@ -242,6 +367,9 @@ async function salvarNovoRegistroInline() {
     const categoriaId = document.getElementById("natureza").value;
     const tipoCampo = document.getElementById("regTipoCampo").value;
     const textoOutput = document.getElementById("regTextoOutput").value.trim();
+    const ocultoAteVal = document.getElementById("regOcultoAte").value || null;
+    const quebraLinhaVal = document.getElementById("regQuebraLinha").checked;
+    const maiorQueVal = document.getElementById("regValorMaiorQue").value ? parseInt(document.getElementById("regValorMaiorQue").value) : null;
     const ordemFinal = ordemFicticiaAoArrastar;
     let nomeCampo = document.getElementById("regNomeCampo").value.trim();
 
@@ -255,6 +383,29 @@ async function salvarNovoRegistroInline() {
     }
 
     try {
+        // Fluxo de Atualização se estive editando
+        if (idSendoEditado) {
+            const dbTipo = tipoCampo === 'integer' ? 'numero' : (tipoCampo === 'inputfield' ? 'texto' : 'bool');
+
+            await supabaseClient.from('perguntas').update({
+                nome_campo: nomeCampo,
+                tipo_campo: dbTipo,
+                texto_output_true: dbTipo !== 'numero' ? textoOutput : null,
+                texto_output_numero: dbTipo === 'numero' ? textoOutput : null,
+                ordem_contexto_true: ordemFinal,
+                ordem_contexto_numero: ordemFinal,
+                oculto_ate: ocultoAteVal,
+                forcar_quebra_linha: quebraLinhaVal,
+                regra_maior_que: maiorQueVal
+            }).eq('id', idSendoEditado);
+
+            alert("Registro atualizado com sucesso!");
+            fecharFormCriarOpcao();
+            await atualizarCamposDoBanco();
+            return;
+        }
+
+        // Fluxo normal de inserção (novo registro)
         if (tipoCampo === 'bool' || tipoCampo === 'integer' || tipoCampo === 'inputfield') {
             const dbTipo = tipoCampo === 'integer' ? 'numero' : (tipoCampo === 'inputfield' ? 'texto' : 'bool');
 
@@ -267,7 +418,10 @@ async function salvarNovoRegistroInline() {
                 texto_output_numero: dbTipo === 'numero' ? textoOutput : null,
                 ordem_contexto_numero: dbTipo === 'numero' ? ordemFinal : null,
                 ordem_exibicao: 10,
-                registrado_por: colaborador
+                registrado_por: colaborador,
+                oculto_ate: ocultoAteVal,
+                forcar_quebra_linha: quebraLinhaVal,
+                regra_maior_que: maiorQueVal
             }]).select();
 
             if (err) throw err;
@@ -285,7 +439,9 @@ async function salvarNovoRegistroInline() {
                     nome_campo: nomeCampo,
                     tipo_campo: 'dropdown',
                     ordem_exibicao: 10,
-                    registrado_por: colaborador
+                    registrado_por: colaborador,
+                    oculto_ate: ocultoAteVal,
+                    forcar_quebra_linha: quebraLinhaVal
                 }]).select();
 
                 if (err) throw err;
@@ -323,7 +479,7 @@ async function salvarNovoRegistroInline() {
             }
         }
 
-        alert("Opção salva e ordenada com sucesso!");
+        alert("Opção salva com sucesso!");
         fecharFormCriarOpcao();
         await atualizarCamposDoBanco();
     } catch (e) { console.error(e); }
@@ -422,22 +578,23 @@ async function atualizarCamposDoBanco() {
 
             const divGroup = document.createElement("div");
             divGroup.className = "input-group-dinamico";
+            divGroup.setAttribute("data-id", campo.id); // Guardado para rastrear ordenações físicas
+
             const id = gerarId(campo.nome_campo);
             const labelContainer = document.createElement("div");
             labelContainer.className = "header-container-opcao";
+
             const label = document.createElement("label");
-            label.textContent = campo.nome_campo;
+            label.innerHTML = `<span>${campo.nome_campo}</span>`;
             label.htmlFor = id;
+            label.style.cursor = "pointer";
+
+            // Evento de gatilho para o botão EDITAR via clique no título do campo
+            label.onclick = () => {
+                iniciarEdicaoDeCampo(campo.id);
+            };
+
             labelContainer.appendChild(label);
-
-            if (campo.tipo_campo === "dropdown") {
-                const btnAdd = document.createElement("button");
-                btnAdd.className = "btn-atalho-add";
-                btnAdd.textContent = "➕ Adicionar Opção";
-                btnAdd.onclick = (e) => { e.preventDefault(); abrirAtalhoDropdownExistente(campo.id); };
-                labelContainer.appendChild(btnAdd);
-            }
-
             divGroup.appendChild(labelContainer);
 
             if (campo.tipo_campo === "dropdown") {
@@ -475,6 +632,7 @@ async function atualizarCamposDoBanco() {
             }
             container.appendChild(divGroup);
         }
+        verificarRegrasOcultamento();
     } catch (erro) { console.error(erro); }
 }
 
@@ -497,6 +655,13 @@ function calcularProbabilidadesDoBanco() {
             campo.vinculos_pesos?.forEach(v => { if (v.naturezas_copom?.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza); });
         }
         if ((campo.tipo_campo === "numero" || campo.tipo_campo === "texto") && el.value.trim() !== "") {
+            // RECURSO CONDICIONAL PARA INTEGER (MAIOR QUE X)
+            if (campo.tipo_campo === "numero" && campo.regra_maior_que !== null) {
+                const valorDigitado = parseInt(el.value.trim());
+                if (valorDigitado <= campo.regra_maior_que) {
+                    return; // Aborta contagem de voto se não atingir critério maior que X
+                }
+            }
             campo.vinculos_pesos?.forEach(v => { if (v.naturezas_copom?.natureza) arrayVotosNaturezas.push(v.naturezas_copom.natureza); });
         }
     });
@@ -512,7 +677,6 @@ function calcularProbabilidadesDoBanco() {
 
     const contagem = {};
     arrayVotosNaturezas.forEach(x => { contagem[x] = (contagem[x] || 0) + 1; });
-
     const ordenadas = Object.keys(contagem).sort((a, b) => contagem[b] - contagem[a]);
 
     ordenadas.slice(0, 3).forEach(nat => {
@@ -531,24 +695,31 @@ function gerarTextoDoBanco() {
         const el = document.getElementById(id);
         if (!el) return;
 
+        // Verifica se o campo pai está oculto por regra condicional antes de emitir texto
+        const blocoDOM = el.closest('.input-group-dinamico');
+        if (blocoDOM && blocoDOM.style.display === "none") return;
+
         if (campo.tipo_campo === "bool" && el.checked && campo.texto_output_true) {
             listagemFrasesFinais.push({
                 texto: campo.texto_output_true,
-                ordem: campo.ordem_contexto_true || 10
+                ordem: campo.ordem_contexto_true || 10,
+                quebra: campo.forcar_quebra_linha || false
             });
         }
         else if (campo.tipo_campo === "numero" && el.value.trim() !== "" && campo.texto_output_numero) {
             let tratado = campo.texto_output_numero.replace("{valor}", el.value.trim());
             listagemFrasesFinais.push({
                 texto: tratado,
-                ordem: campo.ordem_contexto_numero || 10
+                ordem: campo.ordem_contexto_numero || 10,
+                quebra: campo.forcar_quebra_linha || false
             });
         }
         else if (campo.tipo_campo === "texto" && el.value.trim() !== "" && campo.texto_output_true) {
             let tratado = campo.texto_output_true.replace("{valor}", el.value.trim().toUpperCase());
             listagemFrasesFinais.push({
                 texto: tratado,
-                ordem: campo.ordem_contexto_true || 10
+                ordem: campo.ordem_contexto_true || 10,
+                quebra: campo.forcar_quebra_linha || false
             });
         }
         else if (campo.tipo_campo === "dropdown" && el.value) {
@@ -556,7 +727,8 @@ function gerarTextoDoBanco() {
             if (opt && opt.texto_output) {
                 listagemFrasesFinais.push({
                     texto: opt.texto_output,
-                    ordem: opt.ordem_contexto || 10
+                    ordem: opt.ordem_contexto || 10,
+                    quebra: campo.forcar_quebra_linha || false
                 });
             }
         }
@@ -564,7 +736,16 @@ function gerarTextoDoBanco() {
 
     listagemFrasesFinais.sort((a, b) => a.ordem - b.ordem);
 
-    const stringFinalCompilada = listagemFrasesFinais.map(f => f.texto).join(" ");
+    // Compilação tratando as Quebras de Linha (\n) determinadas via painel
+    let stringFinalCompilada = "";
+    listagemFrasesFinais.forEach((f, idx) => {
+        if (f.quebra && idx > 0) {
+            stringFinalCompilada += "\n" + f.texto;
+        } else {
+            stringFinalCompilada += (stringFinalCompilada === "" ? "" : " ") + f.texto;
+        }
+    });
+
     document.getElementById("resultado").value = stringFinalCompilada;
 }
 
