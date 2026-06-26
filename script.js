@@ -142,9 +142,9 @@ function ajustarAlturaTextarea(elemento) {
 
 async function baixarEGuardarTodasAsNaturezas() {
     try {
-        const { data, error } = await supabaseClient.from('naturezas_copom').select('id, naturaleza');
+        const { data, error } = await supabaseClient.from('naturezas_copom').select('id, natureza');
         if (!error && data) {
-            listaMapeadaNaturezasCopom = data.map(n => ({ id: n.id, natureza: n.naturaleza }));
+            listaMapeadaNaturezasCopom = data.map(n => ({ id: n.id, natureza: n.natureza }));
         }
     } catch (e) { console.error(e); }
 }
