@@ -33,7 +33,7 @@ window.onload = async () => {
         atualizarCamposDoBanco();
     });
 
-    // Inicializa o SortableJS na Zona de Arrastar do Formulário
+    // Inicialização segura do SortableJS Grid & Snap
     const grid = document.getElementById("zonaPreviewArrastavel");
     sortableInstance = new Sortable(grid, {
         animation: 150,
@@ -86,7 +86,6 @@ function configurarFluxoRegistro() {
 
     container.style.display = "block";
 
-    // Reset de visibilidade padrão dos blocos internos
     document.getElementById("blocoSubtipoDropdown").style.display = "none";
     document.getElementById("blocoNomeDropdownNovo").style.display = "none";
     document.getElementById("blocoDropdownExistente").style.display = "none";
@@ -166,20 +165,18 @@ function abrirAtalhoDropdownExistente(perguntaId) {
     setTimeout(() => { document.getElementById("regDropdownMae").value = perguntaId; atualizarPreviewInline(); }, 300);
 }
 
-// CONSTRÓI O GRID INTERATIVO (GRID & SNAP) CONTENDO O TEXTO ATUAL DA CATEGORIA + O REGISTRO ATUAL SENDO CRIADO
+// CONSTRÓI O GRID DINÂMICO DE FRASES COMPILADAS NA CATEGORIA
 function atualizarPreviewInline() {
     const grid = document.getElementById("zonaPreviewArrastavel");
     const textoDigitado = document.getElementById("regTextoOutput").value.trim() || "(Frase do registro atual)";
 
     grid.innerHTML = "";
 
-    // 1. Renderiza as frases já existentes salvas no banco para esta categoria (para servir de referência visual)
     perguntasDaCategoriaAtual.forEach(p => {
         let textoExistente = "";
         if (p.tipo_campo === 'bool' || p.tipo_campo === 'texto') textoExistente = p.texto_output_true;
         if (p.tipo_campo === 'numero') textoExistente = p.texto_output_numero;
 
-        // Se for dropdown, pega a primeira opção válida
         if (p.tipo_campo === 'dropdown' && p.opcoes_dropdown && p.opcoes_dropdown.length > 0) {
             textoExistente = p.opcoes_dropdown[0].texto_output;
         }
@@ -192,11 +189,10 @@ function atualizarPreviewInline() {
         }
     });
 
-    // 2. Insere o item dinâmico destacado que o usuário está criando e ordenando agora
     const blocoCriacao = document.createElement("div");
     blocoCriacao.className = "bloco-frase-arrastavel item-criacao";
     blocoCriacao.id = "item_criacao_direta";
-    blocoCriacao.textContent = textoDigitado.replace("{valor}", "[10 / Texto]");
+    blocoCriacao.textContent = textoDigitado.replace("{valor}", "[Valor]");
     grid.appendChild(blocoCriacao);
 
     recalcularOrdemPorPosicaoFisica();
@@ -207,7 +203,6 @@ function recalcularOrdemPorPosicaoFisica() {
     let indexCriacao = blocos.findIndex(b => b.id === "item_criacao_direta");
 
     if (indexCriacao !== -1) {
-        // Multiplica por 10 para criar janelas livres de prioridades para inserções futuras (ex: 10, 20, 30...)
         ordemFicticiaAoArrastar = (indexCriacao + 1) * 10;
     } else {
         ordemFicticiaAoArrastar = 10;
@@ -233,7 +228,7 @@ async function atualizarDropdownsExistentesDaCategoriaInline() {
     } catch (e) { console.error(e); }
 }
 
-// OPERAÇÕES DO BANCO DE DADOS (SUPABASE)
+// OPERAÇÕES DO SUPABASE
 async function salvarNovaCategoriaBanco() {
     const nomeCat = document.getElementById("newCatNome").value.trim();
     if (!nomeCat) { alert("Digite o nome da categoria!"); return; }
@@ -272,7 +267,7 @@ async function salvarNovoRegistroInline() {
                 nome_campo: nomeCampo,
                 tipo_campo: dbTipo,
                 texto_output_true: dbTipo !== 'numero' ? textoOutput : null,
-                ordem_contexto_true: dbTipo !== 'numero' ? ordemFinal : dbTipo === 'texto' ? ordemFinal : null,
+                ordem_contexto_true: dbTipo !== 'numero' ? ordemFinal : null,
                 texto_output_numero: dbTipo === 'numero' ? textoOutput : null,
                 ordem_contexto_numero: dbTipo === 'numero' ? ordemFinal : null,
                 ordem_exibicao: 10,
@@ -402,16 +397,16 @@ async function carregarCategoriasDoBanco() {
 }
 
 async function atualizarCamposDoBanco() {
-    const categoriaId = document.getElementById("natureza").value;
+    const categoryId = document.getElementById("natureza").value;
     const container = document.getElementById("camposDinamicos");
     container.innerHTML = "";
     document.getElementById("painelSugestoes").style.display = "none";
     document.getElementById("resultado").value = "";
 
-    if (!categoriaId) { perguntasDaCategoriaAtual = []; return; }
+    if (!categoryId) { perguntasDaCategoriaAtual = []; return; }
 
     try {
-        let { data: perguntas } = await supabaseClient.from('perguntas').select('*').eq('categoria_id', categoriaId).order('id', { ascending: true });
+        let { data: perguntas } = await supabaseClient.from('perguntas').select('*').eq('categoria_id', categoryId).order('id', { ascending: true });
         perguntasDaCategoriaAtual = perguntas || [];
 
         for (let campo of perguntasDaCategoriaAtual) {
@@ -487,7 +482,6 @@ async function atualizarCamposDoBanco() {
     } catch (erro) { console.error(erro); }
 }
 
-// EXECUTA O CÁLCULO PROBABILÍSTICO BASEADO NOS VOTOS DAS NATUREZAS VINCULADAS
 function calcularProbabilidadesDoBanco() {
     if (!perguntasDaCategoriaAtual.length) return;
     let arrayVotosNaturezas = [];
@@ -533,7 +527,6 @@ function calcularProbabilidadesDoBanco() {
     painelSugestoes.style.display = "block";
 }
 
-// COMPILA E FORMATA DINAMICAMENTE O TEXTO OUTPUT ORDENADO COM BASE NO GRID SNAP
 function gerarTextoDoBanco() {
     let listagemFrasesFinais = [];
 
@@ -573,7 +566,6 @@ function gerarTextoDoBanco() {
         }
     });
 
-    // Ordena as frases de acordo com a prioridade numérica estabelecida pelo arrasto (Grid-Snap)
     listagemFrasesFinais.sort((a, b) => a.ordem - b.ordem);
 
     const stringFinalCompilada = listagemFrasesFinais.map(f => f.texto).join(" ");

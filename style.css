@@ -1,49 +1,254 @@
+/* VARIÁVEIS DE ESTILO - SUPORTE A TEMA CLARO/ESCURO */
+:root {
+    --fundo-geral: #f4f6f9;
+    --fundo-bloco: #ffffff;
+    --texto-principal: #333333;
+    --texto-secundario: #666666;
+    --cor-borda: #d0d7de;
+    --cor-principal: #007bff;
+    --cor-principal-hover: #0056b3;
+    --cor-sucesso: #28a745;
+    --cor-sucesso-hover: #1e7e34;
+    --cor-perigo: #dc3545;
+    --fundo-preview: #fdfdfd;
+}
+
+[data-theme="dark"] {
+    --fundo-geral: #0f141c;
+    --fundo-bloco: #161b22;
+    --texto-principal: #c9d1d9;
+    --texto-secundario: #8b949e;
+    --cor-borda: #30363d;
+    --cor-principal: #58a6ff;
+    --cor-principal-hover: #1f6feb;
+    --cor-sucesso: #34d058;
+    --cor-sucesso-hover: #22863a;
+    --cor-perigo: #f85149;
+    --fundo-preview: #1e2530;
+}
+
+/* ESTILOS GERAIS */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--fundo-geral);
+    color: var(--texto-principal);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    margin-top: 0;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--cor-borda);
+    margin: 20px 0;
+}
+
+.logo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.subtitulo {
+    font-size: 14px;
+    color: var(--texto-secundario);
+    margin: 5px 0;
+}
+
+/* BLOCOS E LAYOUT */
+.bloco-contextual, .box-registro-inline, .input-group-dinamico, .sugestao-box {
+    background-color: var(--fundo-bloco);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.box-registro-inline {
+    border-left: 4px solid var(--cor-principal);
+}
+
+.header-container-opcao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+/* FORMULÁRIOS */
+label {
+    font-weight: 600;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    background-color: var(--fundo-geral);
+    color: var(--texto-principal);
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+/* BOTÕES */
+button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-principal {
+    background-color: var(--cor-principal);
+    color: white;
+}
+
+    .btn-principal:hover {
+        background-color: var(--cor-principal-hover);
+    }
+
+.btn-secundario {
+    background-color: var(--cor-sucesso);
+    color: white;
+}
+
+    .btn-secundario:hover {
+        background-color: var(--cor-sucesso-hover);
+    }
+
+.btn-perigo {
+    background-color: var(--cor-perigo);
+    color: white;
+}
+
+.btn-perigo-outline {
+    background-color: transparent;
+    border: 1px solid var(--cor-perigo);
+    color: var(--cor-perigo);
+}
+
+.btn-atalho-add {
+    background-color: transparent;
+    color: var(--cor-principal);
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.botoes-inline, .botoes-acoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* AUTOCOMPLETE E TAGS */
+.autocomplete-container {
+    position: relative;
+}
+
+.painel-sugestoes-busca {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--fundo-bloco);
+    border: 1px solid var(--cor-borda);
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 0 0 6px 6px;
+}
+
+.item-sugestao {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+    .item-sugestao:hover {
+        background: var(--cor-principal);
+        color: white;
+    }
+
+.tags-naturezas {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+    .tags-naturezas li {
+        background: #e1ecf4;
+        color: #39739d;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+.btn-remover-tag {
+    background: none;
+    border: none;
+    color: #39739d;
+    padding: 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
 /* ==========================================================================
    NOVOS ESTILOS PARA O FLUXO DE CRIAÇÃO E GRID & SNAP (SORTABLEJS)
    ========================================================================== */
-
-/* Container do Grid & Snap */
 .despacho-preview-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     padding: 20px;
-    background-color: var(--fundo-preview, #fdfdfd);
+    background-color: var(--fundo-preview);
     border: 2px dashed #b3d7ff;
     border-radius: 8px;
     margin-top: 10px;
     margin-bottom: 20px;
     min-height: 60px;
     align-items: center;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Modo Noturno para o Grid se aplicável */
 [data-theme="dark"] .despacho-preview-grid {
-    background-color: #1e2530;
     border-color: #3b4b61;
 }
 
-/* Blocos de Frases Arrastáveis (Contornos claros de início/fim) */
 .bloco-frase-arrastavel {
-    background-color: #f0f4f8;
-    color: #333;
+    background-color: var(--fundo-geral);
+    color: var(--texto-principal);
     padding: 8px 14px;
     border-radius: 6px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--cor-borda);
     font-size: 13px;
     font-weight: 500;
     cursor: grab;
     user-select: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-    .bloco-frase-arrastavel:active {
-        cursor: grabbing;
-    }
-
-    /* Destaque para o item que está sendo CRIADO pelo usuário no momento */
     .bloco-frase-arrastavel.item-criacao {
         background-color: #28a745;
         color: #ffffff;
@@ -52,7 +257,6 @@
         box-shadow: 0 4px 8px rgba(40, 167, 69, 0.25);
     }
 
-/* Fantasma (Indicador visual de onde o bloco vai cair no Snap) */
 .sortable-ghost {
     opacity: 0.3;
     background-color: #007bff !important;
@@ -60,7 +264,6 @@
     color: transparent !important;
 }
 
-/* Estilização auxiliar para o bloco de ajuda/dicas */
 #dicaPlaceholder {
     font-size: 12px;
     font-style: italic;
@@ -68,4 +271,5 @@
     padding: 6px 10px;
     border-left: 3px solid #ff9800;
     border-radius: 0 4px 4px 0;
+    color: var(--texto-principal);
 }
