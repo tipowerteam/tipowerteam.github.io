@@ -2,165 +2,179 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COPOMplus</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- BARRA SUPERIOR ESQUERDA (CONTROLES GERAIS) -->
-    <div class="barra-superior-controles">
-        <button id="btnTema" onclick="alternarTema()">Modo Noturno</button>
-        <button id="btnModoEdicao" onclick="alternarModoEdicao()" class="btn-perigo-outline">⚙️ Modo Edição: OFF</button>
-        <button id="areaBotaoNovaOpcao" class="btn-principal" onclick="exibirFormCriarOpcao()" style="display: none;">➕ Registrar Nova Opção/Pergunta</button>
-    </div>
+    <header class="app-header">
+        <div class="logo">
+            <h1>COPOM<span>+</span></h1>
+            <p class="subtitulo">Sistema de Auxílio a Ocorrências COPOM</p>
+        </div>
+        <div class="barra-superior-controles">
+            <button id="btnTema" class="btn-top" onclick="alternarTema()">Modo Noturno</button>
+            <button id="btnModoEdicao" onclick="alternarModoEdicao()" class="btn-top btn-edicao-toggle">⚙️ Modo Edição: OFF</button>
+            <button id="areaBotaoNovaOpcao" class="btn-principal" onclick="exibirFormCriarOpcao()" style="display: none;">➕ Nova Opção/Pergunta</button>
+        </div>
+    </header>
 
-    <div class="logo">
-        <h1>COPOM+</h1>
-        <p class="subtitulo">(Sistema de Auxilio a Ocorrências COPOM)</p>
-    </div>
+    <main class="layout-container">
 
-    <hr>
+        <section class="coluna-despacho-esquerda" id="colunaDespachoEsquerda">
+            <div class="card card-fixo-resultado">
+                <h2>Resultado do Despacho</h2>
+                <div class="textarea-wrapper">
+                    <textarea id="resultado" placeholder="O resultado do despacho aparecerá aqui..." oninput="ajustarAlturaTextarea(this)"></textarea>
+                </div>
 
-    <!-- CONTAINER PRINCIPAL DIVIDIDO EM DUAS COLUNAS (SPLIT-SCREEN) -->
-    <div class="layout-container">
+                <div class="botoes-acoes">
+                    <button onclick="copiarTexto()" class="btn-principal">Copiar Output</button>
+                    <button onclick="limparPagina()" class="btn-perigo">Limpar Tudo</button>
+                </div>
 
-        <!-- COLUNA ESQUERDA: ENTRADAS E CAMPOS DINÂMICOS -->
-        <div class="coluna-esquerda">
-            <div class="bloco-contextual">
+                <div id="painelSugestoes" class="sugestao-box" style="display: none;">
+                    <h3>Possíveis Naturezas Sugeridas:</h3>
+                    <ul id="listaSugestoes"></ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="coluna-formulario-direita" id="colunaFormularioDireita">
+            <div class="bloco-contextual card">
                 <div class="header-container-opcao">
                     <label for="natureza"><strong>Categoria da Ocorrência</strong></label>
                     <button class="btn-atalho-add" onclick="exibirFormCriarCategoria()" title="Criar Nova Categoria no Banco">➕ Nova Categoria</button>
                 </div>
-                <select id="natureza">
-                    <option value="">Carregando...</option>
+                <select id="natureza" class="input-moderno">
+                    <option value="">Carregando categorias...</option>
                 </select>
             </div>
 
-            <!-- Formulário Criar Categoria -->
-            <div id="areaCriarCategoria" class="box-registro-inline" style="display: none;">
+            <div id="areaCriarCategoria" class="box-registro-inline card" style="display: none;">
                 <h3>📁 Criar Nova Categoria</h3>
-                <label for="newCatNome">Nome da Categoria:</label>
-                <input type="text" id="newCatNome" placeholder="Ex: Contra o Patrimônio">
+                <div class="form-group">
+                    <label for="newCatNome">Nome da Categoria:</label>
+                    <input type="text" id="newCatNome" class="input-moderno" placeholder="Ex: Contra o Patrimônio">
+                </div>
                 <div class="botoes-inline">
                     <button onclick="salvarNovaCategoriaBanco()" class="btn-secundario">Salvar Categoria</button>
                     <button onclick="fecharFormCriarCategoria()" class="btn-perigo-outline">Cancelar</button>
                 </div>
             </div>
 
-            <!-- Formulário Criar/Editar Opção -->
-            <div id="areaCriarOpcao" class="box-registro-inline" style="display: none;">
+            <div id="areaCriarOpcao" class="box-registro-inline card" style="display: none;">
                 <h3 id="tituloFormOpcao">📝 Registrar Opção / Pergunta</h3>
 
-                <label for="regTipoCampo">Tipo de Registro:</label>
-                <select id="regTipoCampo" onchange="configurarFluxoRegistro();">
-                    <option value="">-- Selecione o Tipo --</option>
-                    <option value="bool">Boolean / Toggle</option>
-                    <option value="integer">Integer</option>
-                    <option value="inputfield">Inputfield</option>
-                    <option value="dropdown">Dropdown</option>
-                </select>
+                <div class="form-group">
+                    <label for="regTipoCampo">Tipo de Registro:</label>
+                    <select id="regTipoCampo" class="input-moderno" onchange="configurarFluxoRegistro();">
+                        <option value="">-- Selecione o Tipo --</option>
+                        <option value="bool">Boolean / Toggle</option>
+                        <option value="integer">Integer</option>
+                        <option value="inputfield">Inputfield</option>
+                        <option value="dropdown">Dropdown</option>
+                    </select>
+                </div>
 
                 <div id="containerPassosDinamicos" style="display: none;">
-
-                    <div id="blocoSubtipoDropdown" style="display: none;">
+                    <div id="blocoSubtipoDropdown" class="form-group" style="display: none;">
                         <label for="regSubtipoDropdown">Origem do Dropdown:</label>
-                        <select id="regSubtipoDropdown" onchange="configurarSubtipoDropdown();">
+                        <select id="regSubtipoDropdown" class="input-moderno" onchange="configurarSubtipoDropdown();">
                             <option value="novo">Criar um NOVO Dropdown</option>
                             <option value="existente">Adicionar opção a um Dropdown Existente</option>
                         </select>
                     </div>
 
-                    <div id="blocoNomeDropdownNovo" style="display: none;">
+                    <div id="blocoNomeDropdownNovo" class="form-group" style="display: none;">
                         <label for="regNomeDropdownNovo">Nome do Dropdown:</label>
-                        <input type="text" id="regNomeDropdownNovo" placeholder="Ex: Tipo de Arma" oninput="atualizarCamposDuranteCriacaoLocal()">
+                        <input type="text" id="regNomeDropdownNovo" class="input-moderno" placeholder="Ex: Tipo de Arma" oninput="atualizarCamposDuranteCriacaoLocal()">
                     </div>
 
-                    <div id="blocoDropdownExistente" style="display: none;">
+                    <div id="blocoDropdownExistente" class="form-group" style="display: none;">
                         <label for="regDropdownMae">Selecione o Dropdown Alvo:</label>
-                        <select id="regDropdownMae" onchange="atualizarCamposDuranteCriacaoLocal()">
+                        <select id="regDropdownMae" class="input-moderno" onchange="atualizarCamposDuranteCriacaoLocal()">
                             <option value="">Escolha o grupo...</option>
                         </select>
                     </div>
 
-                    <div id="blocoNomeCampoGeral">
+                    <div id="blocoNomeCampoGeral" class="form-group">
                         <label id="labelNomeCampoGeral" for="regNomeCampo">Título / Nome da Opção:</label>
-                        <input type="text" id="regNomeCampo" placeholder="" oninput="atualizarCamposDuranteCriacaoLocal()">
+                        <input type="text" id="regNomeCampo" class="input-moderno" oninput="atualizarCamposDuranteCriacaoLocal()">
                     </div>
 
-                    <div id="blocoTextoOutput">
+                    <div id="blocoTextoOutput" class="form-group">
                         <label for="regTextoOutput">Texto a ser gerado no 'Resultado do Despacho':</label>
-                        <input type="text" id="regTextoOutput" placeholder="Escreva a frase base do despacho..." oninput="atualizarPreviewInline()">
-                        <p id="dicaPlaceholder" class="subtitulo" style="display:none;"></p>
+                        <input type="text" id="regTextoOutput" class="input-moderno" placeholder="Escreva a frase base do despacho..." oninput="atualizarPreviewInline()">
+                        <p id="dicaPlaceholder" class="subtitulo-dica" style="display:none;"></p>
                     </div>
 
-                    <!-- RECURSO: QUEBRA DE LINHA OU SEPARAÇÃO SE ARRASTADO PARA LONGE -->
-                    <div id="blocoOrdenacaoPreview" style="margin-top: 15px;">
+                    <div id="blocoOrdenacaoPreview" class="form-group">
                         <label><strong>Prioridade e Formatação (Arraste no Grid):</strong></label>
-                        <div class="instrucoes-preview">Arraste para definir a ordem. Solte no final ou afaste para ativar quebra de linha.</div>
+                        <div class="instrucoes-preview">Veja como o texto se posicionará em relação às opções ativas:</div>
                         <div id="zonaPreviewArrastavel" class="despacho-preview-grid"></div>
-                        <label style="font-weight: normal; margin-top: 5px;">
-                            <input type="checkbox" id="regQuebraLinha" onchange="atualizarPreviewInline()"> Forçar início em uma nova linha (\n)
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="regQuebraLinha" onchange="atualizarPreviewInline()">
+                            <span>Forçar início em uma nova linha (\n)</span>
                         </label>
                     </div>
 
-                    <!-- RECURSO: EXIBIÇÃO CONDICIONAL (OCULTO ATÉ) -->
-                    <div class="bloco-condicional-oculto" style="margin-top: 15px; padding: 10px; border: 1px dashed var(--cor-borda); border-radius: 6px;">
+                    <div class="bloco-condicional-oculto form-group">
                         <label for="regOcultoAte">👁️ Oculto até que a seguinte opção seja preenchida/verdadeira:</label>
-                        <select id="regOcultoAte">
+                        <select id="regOcultoAte" class="input-moderno">
                             <option value="">Sempre Visível</option>
                         </select>
                     </div>
 
-                    <!-- RECURSO: VINCULAR NATUREZA CONDICIONAL SE FOR INTEGER (MAIOR QUE X) -->
-                    <fieldset class="secao-naturezas-inline" style="margin-top: 15px;">
+                    <fieldset class="secao-naturezas-inline">
                         <legend>Vincular a quais Naturezas?</legend>
 
-                        <div id="blocoRegraMaiorQue" style="display: none; margin-bottom: 10px;">
-                            <label for="regValorMaiorQue" style="font-weight: normal;">Apenas vincular se o valor digitado for maior que ($>$):</label>
-                            <input type="number" id="regValorMaiorQue" placeholder="Ex: 2" style="width: 80px; display: inline-block;">
+                        <div id="blocoRegraMaiorQue" style="display: none; margin-bottom: 15px;">
+                            <label for="regValorMaiorQue">Apenas vincular se o valor digitado for maior que:</label>
+                            <div class="flex-row-fit">
+                                <input type="number" id="regValorMaiorQue" class="input-moderno" placeholder="Ex: 2" style="width: 80px;" onchange="alternarEscopoDeNaturezasVinculadas()">
+                                <div class="radio-group">
+                                    <label><input type="radio" name="escopoNatureza" id="radioNormal" checked onchange="alternarEscopoDeNaturezasVinculadas()"> Vínculo Normal</label>
+                                    <label><input type="radio" name="escopoNatureza" id="radioCondicional" onchange="alternarEscopoDeNaturezasVinculadas()"> Vínculo Condicional</label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="autocomplete-container">
-                            <input type="text" id="buscaNatureza" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Digite para buscar uma natureza...">
+                            <input type="text" id="buscaNatureza" class="input-moderno" onkeyup="filtrarNaturezasAutocomplete(this.value)" placeholder="Digite para buscar uma natureza...">
                             <div id="painelSugestoesInstantes" class="painel-sugestoes-busca"></div>
                         </div>
-                        <ul id="listaNaturezasVinculadas" class="tags-naturezas"></ul>
+
+                        <div class="escopo-tag-container">
+                            <div class="txt-identificador-escopo" id="txtIdentificadorEscopo">Listando Naturezas (Vínculo Normal):</div>
+                            <ul id="listaNaturezasVinculadas" class="tags-naturezas"></ul>
+                        </div>
+
+                        <div id="blocoTagsCondicionais" style="display:none; margin-top:10px;">
+                            <div class="txt-identificador-escopo condicional">Listando Naturezas (Se maior que X):</div>
+                            <ul id="listaNaturezasCondicionais" class="tags-naturezas"></ul>
+                        </div>
                     </fieldset>
 
-                    <div class="botoes-inline" style="margin-top: 15px;">
-                        <button id="btnSalvarRegistro" onclick="salvarNovoRegistroInline()" class="btn-secundario">Salvar Registro no Banco</button>
+                    <div class="botoes-inline" style="margin-top: 20px;">
+                        <button id="btnSalvarRegistro" onclick="salvarNovoRegistroInline()" class="btn-principal">Salvar Registro no Banco</button>
                         <button onclick="fecharFormCriarOpcao()" class="btn-perigo-outline">Cancelar</button>
                     </div>
                 </div>
             </div>
 
-            <!-- CONTAINER ONDE OS CAMPOS SÃO RENDERIZADOS E PODEM SER RE-POSICIONADOS -->
             <div id="camposDinamicos" class="grid-campos-reordenaveis"></div>
-        </div>
+        </section>
 
-        <!-- COLUNA DIREITA: FIXA E ACOPLADA COM OUTPUTS -->
-        <div class="coluna-direita">
-            <h2>Resultado do Despacho</h2>
-            <!-- Redimensionamento manual permitido, expansão vertical automatizada via JS -->
-            <textarea id="resultado" placeholder="O resultado do despacho aparecerá aqui..." oninput="ajustarAlturaTextarea(this)"></textarea>
-
-            <div class="botoes-acoes">
-                <button onclick="copiarTexto()" class="btn-secundario">Copiar Output</button>
-                <button onclick="limparPagina()" class="btn-perigo">Limpar Tudo</button>
-            </div>
-
-            <div id="painelSugestoes" class="sugestao-box" style="display: none;">
-                <h3>Possíveis Naturezas Sugeridas:</h3>
-                <ul id="listaSugestoes"></ul>
-            </div>
-        </div>
-
-    </div>
+    </main>
 
     <div id="toastCopia" class="toast-copia">Texto copiado com sucesso!</div>
 
-    <!-- SCRIPTS EXTERNOS OBRIGATÓRIOS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="script.js"></script>
