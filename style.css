@@ -171,17 +171,15 @@ button {
     z-index: 100;
     max-height: 200px;
     overflow-y: auto;
-    border-radius: 0 0 6px 6px;
 }
 
 .item-sugestao {
     padding: 8px 12px;
     cursor: pointer;
-    font-size: 13px;
 }
 
     .item-sugestao:hover {
-        background: var(--cor-principal);
+        background-color: var(--cor-principal);
         color: white;
     }
 
@@ -189,35 +187,11 @@ button {
     list-style: none;
     padding: 0;
     display: flex;
-    flex-wrap: wrap;
     gap: 5px;
-    margin-top: 10px;
+    flex-wrap: wrap;
 }
 
-    .tags-naturezas li {
-        background: #e1ecf4;
-        color: #39739d;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-.btn-remover-tag {
-    background: none;
-    border: none;
-    color: #39739d;
-    padding: 0;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-/* ==========================================================================
-   NOVOS ESTILOS PARA O FLUXO DE CRIAÇÃO E GRID & SNAP (SORTABLEJS)
-   ========================================================================== */
+/* GRID E ARRASTE PREVIEW */
 .despacho-preview-grid {
     display: flex;
     flex-wrap: wrap;
@@ -246,7 +220,6 @@ button {
     font-weight: 500;
     cursor: grab;
     user-select: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
     .bloco-frase-arrastavel.item-criacao {
@@ -254,22 +227,27 @@ button {
         color: #ffffff;
         border-color: #1e7e34;
         font-weight: bold;
-        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.25);
     }
 
 .sortable-ghost {
     opacity: 0.3;
     background-color: #007bff !important;
     border: 2px dashed #0056b3 !important;
-    color: transparent !important;
 }
 
-#dicaPlaceholder {
-    font-size: 12px;
-    font-style: italic;
-    background-color: rgba(255, 152, 0, 0.1);
-    padding: 6px 10px;
-    border-left: 3px solid #ff9800;
-    border-radius: 0 4px 4px 0;
-    color: var(--texto-principal);
+.toast-copia {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
 }
+
+    .toast-copia.visivel {
+        opacity: 1;
+    }

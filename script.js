@@ -33,7 +33,6 @@ window.onload = async () => {
         atualizarCamposDoBanco();
     });
 
-    // Inicialização segura do SortableJS Grid & Snap
     const grid = document.getElementById("zonaPreviewArrastavel");
     sortableInstance = new Sortable(grid, {
         animation: 150,
@@ -71,7 +70,6 @@ function gerarId(nome) {
     return "campo_" + nome.toLowerCase().replace(/[^a-z0-9]/g, "_");
 }
 
-// CONTROLADORES DO NOVO FLUXO DE REGISTRO CONDICIONAL
 function configurarFluxoRegistro() {
     const tipo = document.getElementById("regTipoCampo").value;
     const container = document.getElementById("containerPassosDinamicos");
@@ -165,7 +163,6 @@ function abrirAtalhoDropdownExistente(perguntaId) {
     setTimeout(() => { document.getElementById("regDropdownMae").value = perguntaId; atualizarPreviewInline(); }, 300);
 }
 
-// CONSTRÓI O GRID DINÂMICO DE FRASES COMPILADAS NA CATEGORIA
 function atualizarPreviewInline() {
     const grid = document.getElementById("zonaPreviewArrastavel");
     const textoDigitado = document.getElementById("regTextoOutput").value.trim() || "(Frase do registro atual)";
@@ -228,7 +225,6 @@ async function atualizarDropdownsExistentesDaCategoriaInline() {
     } catch (e) { console.error(e); }
 }
 
-// OPERAÇÕES DO SUPABASE
 async function salvarNovaCategoriaBanco() {
     const nomeCat = document.getElementById("newCatNome").value.trim();
     if (!nomeCat) { alert("Digite o nome da categoria!"); return; }
